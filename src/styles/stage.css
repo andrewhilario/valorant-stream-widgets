@@ -1,0 +1,151 @@
+/* ── Preview options ─────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-lg);
+}
+
+.tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.tool__label {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+/* ── Stage: a 1920 × 1080 canvas, scaled to fit ──────────────────────────── */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Phones and tablets: a 16:9 box as wide as the column. */
+.stage__area {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+/* Desktop: the stage takes whatever height the column has left, and the canvas letterboxes inside it. */
+@media (min-width: 60rem) {
+  .stage {
+    flex: 1 1 0;
+    min-height: 16rem;
+  }
+
+  .stage__area {
+    flex: 1 1 0;
+    width: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+}
+
+/* A vertical (9:16) canvas on a phone-width column: portrait, but not the full height of the page. */
+.stage__area[data-format="vertical"] {
+  width: min(100%, 20rem);
+  margin-inline: auto;
+  aspect-ratio: 9 / 16;
+}
+
+@media (min-width: 60rem) {
+  .stage__area[data-format="vertical"] {
+    width: auto;
+    margin-inline: 0;
+    aspect-ratio: auto;
+  }
+}
+
+/* Phone view is true phone size. A tall canvas scrolls inside the stage instead of shrinking. */
+.stage__area[data-view="phone"] {
+  place-items: start center;
+  overflow: auto;
+}
+
+.stage__fit {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  outline: 1px solid var(--color-rule);
+  background: var(--color-scene-dark);
+}
+
+.stage__fit[data-backdrop="dark"] {
+  background: var(--color-scene-dark);
+}
+
+.stage__fit[data-backdrop="bright"] {
+  background: var(--color-scene-bright);
+}
+
+.stage__fit[data-backdrop="busy"] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--color-scene-busy-a) 0 1.5rem,
+    var(--color-scene-busy-b) 1.5rem 3rem
+  );
+}
+
+/* The transparency grid stays a fixed size whatever the scale. */
+.stage__fit[data-backdrop="clear"] {
+  background-color: var(--color-scene-check-a);
+  background-image: conic-gradient(
+    var(--color-scene-check-b) 25%,
+    transparent 0 50%,
+    var(--color-scene-check-b) 0 75%,
+    transparent 0
+  );
+  background-size: 1.5rem 1.5rem;
+}
+
+.stage__canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+}
+
+.stage__frame {
+  position: absolute;
+  border: 0;
+  background: transparent;
+  /* Match the widget page's colour scheme, or the browser paints an opaque backdrop behind the frame. */
+  color-scheme: normal;
+  pointer-events: none;
+}
+
+.stage__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2xs) var(--space-lg);
+  min-height: 1.5rem;
+}
+
+.stage__state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
+  min-width: 0;
+}
+
+.stage__caption,
+.stage__hint {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}

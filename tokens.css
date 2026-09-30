@@ -1,0 +1,115 @@
+/* Hallmark tokens · Tally · custom theme "broadcast control room"
+ * paper oklch(16.5% 0.015 255) · accent oklch(80% 0.150 80) · axes: dark / grotesk-sans / chromatic-amber ~80°
+ * Every colour, font, space, size, ease and duration the site uses lives here. Page CSS references these by
+ * name; nothing inlines a value. The widget is separate: its colours are authored in
+ * src/widgets/valorant-rank/themes.ts and reach its stylesheet as var(--w-*).
+ */
+
+:root {
+  /* ── Paper, ink, rules: navy-tinted neutrals, hue 255 ─────────────────── */
+  --color-paper: oklch(16.5% 0.015 255);
+  --color-paper-2: oklch(20% 0.016 255);
+  --color-paper-3: oklch(24.5% 0.018 255);
+  --color-paper-4: oklch(29% 0.019 255);
+  /* Rules divide and frame. Edges mark where a control ends, so they clear 3:1 against every panel. */
+  --color-rule: oklch(35% 0.018 255);
+  --color-rule-2: oklch(28.5% 0.016 255);
+  --color-edge: oklch(54% 0.018 255);
+  --color-neutral: oklch(60% 0.018 255);
+  --color-muted: oklch(73% 0.02 255);
+  --color-ink-2: oklch(85% 0.012 255);
+  --color-ink: oklch(95% 0.008 255);
+
+  /* ── Signal amber, hue 80: primary action, active marker, focus ───────── */
+  --color-accent: oklch(80% 0.15 80);
+  --color-accent-hover: oklch(85% 0.15 82);
+  --color-accent-press: oklch(75% 0.145 78);
+  --color-accent-ink: oklch(19% 0.03 75);
+  --color-focus: oklch(88% 0.16 88);
+
+  /* ── Status. Always paired with words, never colour alone ─────────────── */
+  --color-live: oklch(80% 0.17 160);
+  --color-error: oklch(74% 0.17 25);
+
+  /* ── Overlay scrim ────────────────────────────────────────────────────── */
+  --color-scrim: oklch(9% 0.014 255 / 0.74);
+
+  /* ── Stage scenes: the preview backdrops, for testing legibility ──────── */
+  --color-scene-dark: oklch(11% 0.014 255);
+  --color-scene-bright: oklch(88% 0.02 235);
+  --color-scene-busy-a: oklch(40% 0.05 150);
+  --color-scene-busy-b: oklch(31% 0.055 150);
+  --color-scene-check-a: oklch(30% 0.012 255);
+  --color-scene-check-b: oklch(37% 0.012 255);
+
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-display: var(--ff-display), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-body: var(--ff-body), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-outlier: var(--ff-mono), ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.5625rem;
+  --text-h1: clamp(1.75rem, 1.1vw + 1.4rem, 2.441rem);
+  /* The one big number on a calculator page. */
+  --text-figure: clamp(3.25rem, 5vw + 1.75rem, 5.25rem);
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
+  --weight-bold: 700;
+
+  --lh-tight: 1.1;
+  --lh-ui: 1.4;
+  --lh-body: 1.55;
+
+  --tracking-display: -0.02em;
+  --tracking-label: 0.08em;
+
+  /* ── Space: 4 pt scale ────────────────────────────────────────────────── */
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+
+  /* ── Shape ────────────────────────────────────────────────────────────── */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-round: 999px;
+  --rule-hair: 1px;
+
+  /* ── Layout ───────────────────────────────────────────────────────────── */
+  --nav-h: 3.5rem;
+  --inspector-w: 23rem;
+  --control-h: 2.5rem;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  /* ── Stacking ─────────────────────────────────────────────────────────── */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-sticky-nav: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+}
+
+/* Touch screens get 44 px controls. */
+@media (pointer: coarse) {
+  :root {
+    --control-h: 2.75rem;
+  }
+}

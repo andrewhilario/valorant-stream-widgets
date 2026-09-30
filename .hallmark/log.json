@@ -1,0 +1,24 @@
+[
+  {
+    "date": "2026-09-30",
+    "macrostructure": "Component Playground",
+    "theme": "custom",
+    "theme_axes": "dark / grotesk-sans / chromatic-amber ~80°",
+    "vibe": "broadcast control room, dark, instrument-panel, one signal colour",
+    "enrichment": "none",
+    "nav": "N13",
+    "footer": "Ft2",
+    "brief": "Tally · free Valorant rank overlay editor for OBS and vertical (TikTok) streams"
+  },
+  {
+    "date": "2026-09-30",
+    "macrostructure": "Stat-Led",
+    "theme": "custom (same tokens as the editor; system-managed)",
+    "theme_axes": "dark / grotesk-sans / chromatic-amber ~80°",
+    "vibe": "broadcast control room, dark, instrument-panel, one signal colour",
+    "enrichment": "none",
+    "nav": "N13",
+    "footer": "Ft2",
+    "brief": "Tally · Valorant rank calculator and Agent Mastery calculator: SEO tool pages that share the editor's chrome, tokens and controls"
+  }
+]

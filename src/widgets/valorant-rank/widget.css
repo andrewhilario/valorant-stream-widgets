@@ -1,0 +1,619 @@
+/* Hallmark · component: overlay-widget · genre: modern-minimal · theme: custom (presets resolved at runtime from OKLCH tokens)
+ * states: display-only, no interactive states · motion: opacity + transform only, reduced-motion honoured
+ * compat: no oklch(), color-mix(), nesting, :has() or container queries — OBS browser sources can run old Chromium builds
+ * colours: only var(--w-*) below; values are computed from OKLCH in themes.ts and set inline by Widget.tsx
+ */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+.w-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  user-select: none;
+}
+
+.w {
+  --w-line: max(1px, 0.0625em);
+  --w-cut: 0.75em;
+  --w-radius: 0;
+  --w-tag-radius: 0;
+  --w-track-radius: 0;
+  --w-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --w-dur: 400ms;
+
+  position: relative;
+  box-sizing: border-box;
+  width: max-content;
+  font-size: calc(16px * var(--w-scale, 1));
+  line-height: 1.2;
+  color: var(--w-ink);
+  font-family: var(--w-font-body);
+  font-weight: var(--w-body-weight);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  opacity: 0;
+  transition: opacity var(--w-dur) var(--w-ease);
+}
+
+.w *,
+.w *::before,
+.w *::after {
+  box-sizing: border-box;
+}
+
+.w[data-ready="true"] {
+  opacity: 1;
+}
+
+.w[data-animate="off"],
+.w[data-animate="off"] .w__fill {
+  transition: none;
+}
+
+.w[data-layout="card"] {
+  width: 26em;
+}
+
+/* ── Type sets ─────────────────────────────────────────────────────────── */
+
+.w[data-font="tactical"] {
+  --w-font-display: var(--ff-teko), "Arial Narrow", sans-serif;
+  --w-font-body: var(--ff-barlow), "Arial Narrow", sans-serif;
+  --w-display-weight: 600;
+  --w-body-weight: 500;
+  --w-case: uppercase;
+  --w-tracking: 0.02em;
+  --w-tier-size: 2em;
+  --w-rr-size: 1.75em;
+  --w-num-size: 1.75em;
+  --w-lead-size: 2.25em;
+}
+
+.w[data-font="grotesk"] {
+  --w-font-display: var(--ff-space), "Segoe UI", sans-serif;
+  --w-font-body: var(--ff-plex), "Segoe UI", sans-serif;
+  --w-display-weight: 600;
+  --w-body-weight: 500;
+  --w-case: none;
+  --w-tracking: -0.01em;
+  --w-tier-size: 1.625em;
+  --w-rr-size: 1.4em;
+  --w-num-size: 1.375em;
+  --w-lead-size: 1.875em;
+}
+
+.w[data-font="mono"] {
+  --w-font-display: var(--ff-plexmono), Consolas, monospace;
+  --w-font-body: var(--ff-plexmono), Consolas, monospace;
+  --w-display-weight: 500;
+  --w-body-weight: 500;
+  --w-case: uppercase;
+  --w-tracking: -0.02em;
+  --w-tier-size: 1.5em;
+  --w-rr-size: 1.25em;
+  --w-num-size: 1.25em;
+  --w-lead-size: 1.625em;
+}
+
+/* ── Corners ───────────────────────────────────────────────────────────── */
+
+.w[data-corners="sharp"] {
+  --w-tag-radius: 0.125em;
+}
+
+.w[data-corners="round"] {
+  --w-radius: 0.875em;
+  --w-tag-radius: 0.5em;
+  --w-track-radius: 999px;
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+
+.w__panel {
+  position: relative;
+  padding: 1em 1.25em;
+  background: var(--w-surface);
+  border-radius: var(--w-radius);
+  box-shadow: inset 0 0 0 var(--w-line) var(--w-border);
+}
+
+/* Chamfered corners: clip the panel, then draw the hairline as a ring so the
+   diagonal edges get a border too (a plain border would be clipped off). */
+.w[data-corners="chamfer"] .w__panel {
+  box-shadow: none;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--w-cut)) 0,
+    100% var(--w-cut),
+    100% 100%,
+    var(--w-cut) 100%,
+    0 calc(100% - var(--w-cut))
+  );
+}
+
+.w[data-corners="chamfer"] .w__panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--w-border);
+  pointer-events: none;
+  clip-path: polygon(
+    evenodd,
+    0 0,
+    calc(100% - var(--w-cut)) 0,
+    100% var(--w-cut),
+    100% 100%,
+    var(--w-cut) 100%,
+    0 calc(100% - var(--w-cut)),
+    0 0,
+    var(--w-line) var(--w-line),
+    calc(100% - var(--w-cut) - 0.414 * var(--w-line)) var(--w-line),
+    calc(100% - var(--w-line)) calc(var(--w-cut) + 0.414 * var(--w-line)),
+    calc(100% - var(--w-line)) calc(100% - var(--w-line)),
+    calc(var(--w-cut) + 0.414 * var(--w-line)) calc(100% - var(--w-line)),
+    var(--w-line) calc(100% - var(--w-cut) - 0.414 * var(--w-line)),
+    var(--w-line) var(--w-line)
+  );
+}
+
+/* Corner marks sit on the two corners the chamfer leaves square. */
+.w__mark {
+  position: absolute;
+  width: 0.875em;
+  height: 0.875em;
+  border: 0 solid var(--w-accent);
+  pointer-events: none;
+}
+
+.w__mark--tl {
+  top: 0;
+  left: 0;
+  border-top-width: 0.125em;
+  border-left-width: 0.125em;
+  border-top-left-radius: var(--w-radius);
+}
+
+.w__mark--br {
+  right: 0;
+  bottom: 0;
+  border-right-width: 0.125em;
+  border-bottom-width: 0.125em;
+  border-bottom-right-radius: var(--w-radius);
+}
+
+/* ── Head: badge, rank, peak ───────────────────────────────────────────── */
+
+.w__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 0.75em;
+}
+
+.w__badge {
+  display: grid;
+  place-items: center;
+}
+
+.w__badge--lg {
+  width: 3.25em;
+  height: 3.25em;
+}
+
+.w__badge--md {
+  width: 2.5em;
+  height: 2.5em;
+}
+
+.w__badge--sm {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.w__badge img,
+.w__glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.w__glyph-frame,
+.w__glyph-chev {
+  fill: none;
+  stroke: var(--w-tier);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.w__glyph-frame {
+  stroke-width: 2.5;
+}
+
+.w__glyph-chev {
+  stroke-width: 3;
+}
+
+.w__rank {
+  min-width: 0;
+}
+
+.w__tier {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--w-font-display);
+  font-size: var(--w-tier-size);
+  font-weight: var(--w-display-weight);
+  line-height: 1;
+  letter-spacing: var(--w-tracking);
+  text-transform: var(--w-case);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.w__rr {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0.375em 0 0;
+  font-size: 0.875em;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--w-muted);
+  white-space: nowrap;
+}
+
+.w__rr-n {
+  font-family: var(--w-font-display);
+  font-size: var(--w-rr-size);
+  font-weight: var(--w-display-weight);
+  line-height: 1;
+  color: var(--w-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.w__rr-u {
+  letter-spacing: 0.04em;
+}
+
+.w__delta {
+  padding: 0.25em 0.5em;
+  border-radius: var(--w-tag-radius);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.w__delta[data-tone="gain"] {
+  color: var(--w-gain);
+  background: var(--w-gain-bg);
+}
+
+.w__delta[data-tone="loss"] {
+  color: var(--w-loss);
+  background: var(--w-loss-bg);
+}
+
+.w__peak {
+  display: grid;
+  align-self: start;
+  justify-items: end;
+  gap: 0.25em;
+}
+
+.w__peak-l {
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--w-muted);
+}
+
+.w__peak-v {
+  display: flex;
+  align-items: center;
+  gap: 0.375em;
+  font-size: 0.875em;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Progress ──────────────────────────────────────────────────────────── */
+
+.w__progress {
+  margin-top: 0.875em;
+}
+
+.w__track {
+  position: relative;
+  height: 0.4375em;
+  overflow: hidden;
+  background: var(--w-track);
+  border-radius: var(--w-track-radius);
+}
+
+/* The fill is full width, slid left by the missing share: transform only. */
+.w__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--w-tier);
+  border-radius: inherit;
+  transform: translateX(calc((var(--p, 0) - 1) * 100%));
+  transition: transform var(--w-dur) var(--w-ease);
+}
+
+.w[data-progress="accent"] .w__fill {
+  background: var(--w-accent);
+}
+
+.w__pmeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  margin: 0.4375em 0 0;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--w-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.w__pmeta b {
+  font-weight: 700;
+  color: var(--w-ink);
+}
+
+.w__pmeta--solo {
+  margin-top: 0.875em;
+}
+
+/* ── Session stats ─────────────────────────────────────────────────────── */
+
+.w__stats {
+  display: flex;
+  margin: 0.875em 0 0;
+  padding: 0.875em 0 0;
+  border-top: var(--w-line) solid var(--w-border);
+}
+
+.w__stat {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 0.875em;
+  border-left: var(--w-line) solid var(--w-border);
+}
+
+.w__stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.w__stat:last-child {
+  padding-right: 0;
+}
+
+.w__stat[data-lead="true"] {
+  flex: 1 1 auto;
+}
+
+.w__stat dt {
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--w-muted);
+}
+
+.w__stat dd {
+  margin: 0.375em 0 0;
+  font-family: var(--w-font-display);
+  font-size: var(--w-num-size);
+  font-weight: var(--w-display-weight);
+  line-height: 1;
+  color: var(--w-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.w__stat[data-lead="true"] dd {
+  font-size: var(--w-lead-size);
+}
+
+.w__num[data-tone="gain"] {
+  color: var(--w-gain);
+}
+
+.w__num[data-tone="loss"] {
+  color: var(--w-loss);
+}
+
+.w__slash {
+  color: var(--w-muted);
+}
+
+.w__sub {
+  display: block;
+  margin-top: 0.25em;
+  font-family: var(--w-font-body);
+  font-size: calc(12px * var(--w-scale, 1));
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--w-muted);
+}
+
+/* ── Strip: one line ───────────────────────────────────────────────────── */
+
+.w[data-layout="strip"] .w__panel {
+  display: flex;
+  align-items: center;
+  gap: 1.25em;
+  padding: 0.625em 1.125em 0.625em 0.75em;
+}
+
+.w[data-layout="strip"] .w__head {
+  column-gap: 0.625em;
+}
+
+.w[data-layout="strip"] .w__tier {
+  font-size: calc(var(--w-tier-size) * 0.85);
+}
+
+.w[data-layout="strip"] .w__progress {
+  width: 7em;
+  margin: 0;
+}
+
+.w[data-layout="strip"] .w__stats {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+
+.w[data-layout="strip"] .w__stat {
+  padding: 0 1em;
+}
+
+.w[data-layout="strip"] .w__stat[data-lead="true"] {
+  flex: 0 1 auto;
+}
+
+.w[data-layout="strip"] .w__stat[data-lead="true"] dd {
+  font-size: var(--w-num-size);
+}
+
+.w[data-layout="strip"] .w__sub {
+  display: none;
+}
+
+/* ── Badge: rank and RR ────────────────────────────────────────────────── */
+
+.w[data-layout="badge"] .w__panel {
+  padding: 0.625em 1.125em 0.625em 0.75em;
+}
+
+.w[data-layout="badge"] .w__head {
+  column-gap: 0.625em;
+}
+
+.w[data-layout="badge"] .w__tier {
+  font-size: calc(var(--w-tier-size) * 0.85);
+}
+
+.w[data-layout="badge"] .w__progress {
+  margin-top: 0.5em;
+}
+
+.w[data-layout="badge"] .w__pmeta {
+  display: none;
+}
+
+/* ── Stack: tall and narrow, for vertical (9:16) streams ───────────────── */
+
+.w[data-layout="stack"] {
+  width: 16em;
+}
+
+.w[data-layout="stack"] .w__panel {
+  padding: 1.25em 1.25em 0.875em;
+}
+
+.w[data-layout="stack"] .w__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75em;
+  text-align: center;
+}
+
+.w__badge--xl {
+  width: 5em;
+  height: 5em;
+}
+
+.w[data-layout="stack"] .w__rank {
+  width: 100%;
+}
+
+.w[data-layout="stack"] .w__tier {
+  font-size: calc(var(--w-tier-size) * 1.1);
+}
+
+.w[data-layout="stack"] .w__rr {
+  justify-content: center;
+  margin-top: 0.5em;
+}
+
+.w[data-layout="stack"] .w__peak {
+  display: flex;
+  align-items: center;
+  align-self: auto;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+/* Stats become rows: label left, value right, a hairline between. */
+.w[data-layout="stack"] .w__stats {
+  display: block;
+  margin-top: 1em;
+  padding-top: 0;
+}
+
+.w[data-layout="stack"] .w__stat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25em 0.75em;
+  padding: 0.625em 0;
+  border-left: 0;
+}
+
+.w[data-layout="stack"] .w__stat + .w__stat {
+  border-top: var(--w-line) solid var(--w-border);
+}
+
+.w[data-layout="stack"] .w__stat dd {
+  margin: 0 0 0 auto;
+  text-align: right;
+}
+
+.w[data-layout="stack"] .w__sub {
+  display: inline;
+  margin: 0 0 0 0.5em;
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────── */
+
+.w__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .w {
+    --w-dur: 150ms;
+  }
+}

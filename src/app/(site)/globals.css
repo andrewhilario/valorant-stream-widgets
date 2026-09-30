@@ -1,0 +1,23 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Component Playground (editor) + Stat-Led (calculators) · theme: custom · enrichment: none (the calculators' range bar is data, not decoration) · nav: N13 · footer: Ft2
+ * vibe: "broadcast control room, dark, instrument-panel, one signal colour"
+ * paper: oklch(16.5% 0.015 255) · accent: oklch(80% 0.150 80) · display: Space Grotesk · body: IBM Plex Sans · outlier: IBM Plex Mono (the link, formulas and numeric readouts only)
+ * axes: dark / grotesk-sans / chromatic-amber ~80° · studied: no (ValorantWidget.html was audited and its look re-drawn, not copied) · context: explicit
+ * N13 knobs: pill=right-of-brand, groups=grouped, hints=shown · C4 sticky bar on phones (editor: copy; calculators: the headline figure) · F4 steps beside an F3 fields table
+ * calculators: one big tabular figure paired with words (never a number alone), an "Example values" status line mirroring the editor's "Sample data", motion cut (no number tick)
+ * pre-emit critique: P4 H4 E4 S4 R4 V4 (editor V5; the calculators deliberately share its chrome and tokens)
+ * contrast: pass (40–41; src/lib/tokens.test.ts asserts every pair this CSS uses, against tokens.css itself)
+ * nav · footer · hero: pass (42–45; title, stage, link and copy button all sit above the fold at 1280×800)
+ * honest: pass (46; no invented numbers, sample data is always labelled) · chrome: pass (47) · icons: pass (30; Lucide only)
+ * tokens: pass (48; the one literal is the themeColor meta tag in layout.tsx, which cannot read a custom property)
+ * responsive: pass (49; audited at 320 / 375 / 414 / 768 / 1280: nothing past the viewport, no wrapped clickable text)
+ * mobile: pass (34, 50–57; tabs dock beneath the sticky nav below 60rem)
+ */
+
+@import "../../../tokens.css";
+@import "../../styles/base.css";
+@import "../../styles/controls.css";
+@import "../../styles/shell.css";
+@import "../../styles/stage.css";
+@import "../../styles/sections.css";
+@import "../../styles/tools.css";
+@import "../../styles/palette.css";

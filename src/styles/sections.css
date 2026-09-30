@@ -1,0 +1,216 @@
+/* ── Below the editor: setup steps, OBS fields, questions ────────────────── */
+
+.section {
+  padding: var(--space-2xl) var(--space-md);
+  border-top: 1px solid var(--color-rule-2);
+}
+
+.section h2 {
+  margin-bottom: var(--space-lg);
+  font-size: var(--text-lg);
+}
+
+@media (min-width: 60rem) {
+  .section {
+    padding-inline: var(--space-xl);
+  }
+}
+
+.setup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-xl);
+}
+
+@media (min-width: 60rem) {
+  .setup {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2xl);
+  }
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 40rem;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.steps h3 {
+  font-size: var(--text-base);
+}
+
+/* The step number is part of the heading's own line, not a column beside it. */
+.steps__n {
+  display: inline-block;
+  min-width: 1.5em;
+  margin-inline-end: var(--space-xs);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+}
+
+.steps p {
+  max-width: 56ch;
+  color: var(--color-ink-2);
+}
+
+.spec {
+  padding: var(--space-lg);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-2);
+}
+
+.spec__title {
+  font-size: var(--text-base);
+}
+
+.spec__rows {
+  margin-top: var(--space-sm);
+}
+
+.spec__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block: var(--space-sm);
+}
+
+.spec__row + .spec__row {
+  border-top: 1px solid var(--color-rule-2);
+}
+
+.spec__row dt {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.spec__row dd {
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  text-align: right;
+}
+
+.spec__note {
+  margin-top: var(--space-xs);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+/* ── Questions ───────────────────────────────────────────────────────────── */
+
+.faq {
+  max-width: 46rem;
+  border-top: 1px solid var(--color-rule);
+}
+
+.faq__item {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.faq__item > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-height: 3.5rem;
+  padding-block: var(--space-sm);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--weight-strong);
+  list-style: none;
+  cursor: pointer;
+}
+
+.faq__item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq__item > summary::after {
+  content: "";
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: rotate(45deg);
+  transition: transform var(--dur-micro) var(--ease-out);
+}
+
+.faq__item[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+@media (hover: hover) {
+  .faq__item > summary:hover::after {
+    border-color: var(--color-ink);
+  }
+}
+
+.faq__answer {
+  display: grid;
+  gap: var(--space-xs);
+  max-width: 62ch;
+  padding-bottom: var(--space-md);
+  color: var(--color-ink-2);
+}
+
+/* ── Footer: one line, hairline above ────────────────────────────────────── */
+
+.foot {
+  padding: var(--space-lg) var(--space-md);
+  padding-bottom: calc(var(--space-lg) + 5rem);
+  border-top: 1px solid var(--color-rule);
+}
+
+.foot__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-sm);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.foot__brand {
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display);
+}
+
+.foot__sep {
+  color: var(--color-neutral);
+}
+
+/* On phones the row wraps, and a "·" stranded at the start or end of a line looks like a mistake, so the
+   items are simply spaced out. The floating Buy Me a Coffee button sits above the phone bar, so the last
+   line needs room to clear it. */
+@media (max-width: 59.99rem) {
+  .foot {
+    padding-bottom: calc(var(--space-lg) + 8.5rem);
+  }
+
+  .foot__line {
+    gap: var(--space-2xs) var(--space-lg);
+  }
+
+  .foot__sep {
+    display: none;
+  }
+}
+
+@media (min-width: 60rem) {
+  .foot {
+    padding: var(--space-lg) var(--space-xl);
+  }
+}
