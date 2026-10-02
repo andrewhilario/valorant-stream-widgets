@@ -4,7 +4,7 @@ Free tools for Valorant streamers, on one static Next.js site. No account, no ba
 
 | Page | What it is |
 | --- | --- |
-| `/` | **Rank overlay** for OBS and TikTok LIVE: rank, RR, peak, session stats, four layouts (one tall and narrow for vertical streams). Pick a look with a live preview, copy one link, paste it into OBS as a Browser Source. |
+| `/` | **Rank overlay** for OBS and TikTok LIVE: rank, RR, peak, session stats, four layouts (one tall and narrow for vertical streams). Pick a theme from a gallery (point at one to try it on the live preview), watch it react to a win, a loss or a rank change, copy one link, paste it into OBS as a Browser Source. |
 | `/valorant-rank-calculator` | **Rank calculator**: games to a target rank from your win rate and RR per game, with a likely range. Optionally fills itself in from your recent ranked games, including a per-agent breakdown. |
 | `/valorant-agent-mastery-calculator` | **Agent Mastery calculator**: matches, hours and days to a target Act Level, from Riot's published Mastery Point rules. Pick a game mode (Competitive, Unrated, Premier, Swiftplay, Spike Rush, Team Deathmatch) and it shows how many matches of each the climb takes. |
 
@@ -26,7 +26,7 @@ Settings go in `.env.local` (copy `.env.example`). Nothing is needed to run loca
 
 | Variable | What it does |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | **Set this before deploying.** The public address, e.g. `https://tally.example`. Canonical links, the sitemap, structured data and social cards are built from it. Unset, they point at `localhost` and the build warns. On Vercel the production URL is used automatically. |
+| `NEXT_PUBLIC_SITE_URL` | **Set this before deploying.** The public address, e.g. `https://tally.example` (the `https://` is added if you leave it off, and `http://` for localhost, so `localhost:3000` works too). Canonical links, the sitemap, structured data and social cards are built from it. Unset, they point at `localhost` and the build warns. On Vercel the production URL is used automatically. |
 | `NEXT_PUBLIC_BMC_URL` | Your Buy Me a Coffee page. Defaults to `https://buymeacoffee.com/ainzzuu`. |
 | `NEXT_PUBLIC_BMC_WIDGET` | `off` removes Buy Me a Coffee's floating button (the plain links stay) and its hosts from the security policy. |
 
@@ -52,6 +52,30 @@ A shared key would cap how many streamers could be live at once, because each ke
 ### Sessions need no reset
 
 There's no stored session to lose when OBS restarts. The widget works the session out from match history every time: the latest unbroken run of games (a gap longer than N hours starts a new one), everything since local midnight, or a rolling window. See [`src/lib/session.ts`](src/lib/session.ts).
+
+### The overlay reacts to games
+
+When two lookups in a row differ, the widget plays a short reaction, so viewers see a result land. [`reactions.ts`](src/widgets/valorant-rank/reactions.ts) decides which, as a pure function (`detectReaction(previous, next)`):
+
+| Reaction | When | What plays |
+| --- | --- | --- |
+| Win | a new game that gained RR | a pop on the change, a bump on the number, one pass of light |
+| Loss | a new game that lost RR | the change nudges, the number dips, a little red on the edge. No fanfare. |
+| Rank up | the tier went up (or the last placement game ended) | the badge swells and sends out a ring, the name rises into place, light crosses slowly. RR and the bar snap to the new rank instead of counting backwards. |
+| Rank down | the tier went down | the badge sinks, the name drops in, the change nudges |
+
+It stays quiet when it shouldn't speak: the first lookup, a repeat of the same games, a different account, a history that failed to load and then loaded (so old games don't look new), a game that ended more than 15 minutes ago, and a game that changed no RR. A new rank wins over the game that caused it.
+
+- It is on by default and off with **React to games** in Look (link parameter `rx=0`). It needs **Animate changes**, so a fully static overlay stays static, and it never starts for someone who asked their system for reduced motion.
+- It moves only `transform` and `opacity`, and the widget stylesheet still avoids everything old OBS builds can't parse.
+- The editor can't wait for a game to end, so under the preview **Try a game** (Win, Loss, Rank up, Rank down; also in the ⌘K palette, and by clicking the widget in the preview) plays one made up by `simulateGame`. It runs on sample data and keeps going from there (win enough and it promotes), and switching back to "Show my rank" starts over. It isn't a model of Valorant's matchmaking: RR stays continuous across a rank boundary, where real demotions land lower.
+- The live path was exercised with stubbed HenrikDev responses (first load, nothing new, a win, a repeat, a promotion), like everything else here; it hasn't seen a real key.
+
+### Themes
+
+The Theme control is drawn as cards (`display: "gallery"` on a choice in the schema, with a `swatch` and a `note` per option), each a miniature of the widget in that theme's own colours, corners, marks and bar. Pointing at a card tries it on the preview without picking it: the editor posts the settings *as if it were picked* (`withChoice`, the same code a real pick uses, bundle included) and puts the real ones back when the pointer leaves. Nothing is saved or put in the link until it is picked. Touch just taps to pick. In the preview, a theme change cross-fades because the widget's colour variables are registered with `@property`; a browser that doesn't know it simply changes at once, and in OBS the settings never change after load.
+
+Pointing at the widget in the editor's preview leans it a few degrees toward the pointer and presses it on click ([`tilt.ts`](src/lib/tilt.ts), [`useStageTilt.ts`](src/components/playground/useStageTilt.ts)). That is only the editor's preview, never the page OBS loads, it is off for reduced motion, and the maximum lean is 3.5°.
 
 ### OBS compatibility
 
@@ -109,7 +133,7 @@ A key is also visible to anyone with the OBS link, so treat the link like a pass
 2. `Widget.tsx` + `widget.css`: a pure renderer. `Runtime.tsx`: reads the link, fetches, renders. Copy the Valorant one.
 3. Register the metadata in [`src/widgets/registry.ts`](src/widgets/registry.ts) and the runtime in [`src/components/WidgetRuntime.tsx`](src/components/WidgetRuntime.tsx).
 
-Controls marked `secret: true` travel in the `#fragment`, never the query string.
+Controls marked `secret: true` travel in the `#fragment`, never the query string. A choice can be drawn as a theme-style gallery (`display: "gallery"`, with a `swatch` per option), and a widget can offer `tryouts` in the registry: buttons under the preview that make it play something once.
 
 ## Checking a real key
 
@@ -133,8 +157,8 @@ src/components/calc/        the calculators: fields, result pieces, account pane
 src/components/site/        header, footer, breadcrumbs, palette, the Buy Me a Coffee button
 src/components/controls/    schema-driven form controls (the calculators reuse them)
 src/content/faq.ts          FAQ copy as data: the visible answers and the FAQPage data are the same words
-src/lib/                    schema codec, session maths, rank and mastery maths, HenrikDev client + normalisers
-src/widgets/valorant-rank/  definition, renderer, runtime, themes, styles
+src/lib/                    schema codec, session maths, rank and mastery maths, tilt maths, HenrikDev client + normalisers
+src/widgets/valorant-rank/  definition, renderer, runtime, themes, reactions, styles
 scripts/                    check-api.mjs (a real key), check-seo.mjs (the built pages)
 ```
 

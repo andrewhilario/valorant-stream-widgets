@@ -3,15 +3,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { isFormat, type Format } from "@/lib/canvas";
 import { copyText } from "@/lib/clipboard";
-import type { ConfigMessage, PreviewStatus, WidgetMessage } from "@/lib/preview";
+import type { ConfigMessage, PreviewStatus, ReactMessage, WidgetMessage } from "@/lib/preview";
 import { widgetStorageKey } from "@/lib/storage-keys";
 import {
+  applyChoice,
   controlsOf,
   fromParams,
   sanitize,
   sanitizeValue,
   secretHash,
   toParams,
+  withChoice,
   type Config,
   type ConfigValue,
 } from "@/lib/schema";
@@ -53,6 +55,12 @@ export function usePlaygroundState(widget: WidgetMeta) {
 
   const [sample, setSampleState] = useState(true);
   const manualSample = useRef(false);
+
+  // A choice being tried (pointer over a theme card) and a game being played ("Try a game"). Neither is saved or put in the
+  // link; they only change what the preview shows.
+  const [trial, setTrial] = useState<{ key: string; value: string } | null>(null);
+  const [play, setPlay] = useState({ kind: "", n: 0 });
+  const playSent = useRef(0);
 
   const [size, setSize] = useState(DEFAULT_SIZE);
   const [preview, setPreview] = useState<Preview>({ status: { state: "idle" }, account: null, tier: null });
@@ -174,11 +182,39 @@ export function usePlaygroundState(widget: WidgetMeta) {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  // What the preview shows: the saved settings, unless a choice is being tried. Trying the choice that's already picked
+  // changes nothing (picking it again wouldn't either).
+  const shown = useMemo(
+    () => (trial && config[trial.key] !== trial.value ? withChoice(controls, config, trial.key, trial.value) : config),
+    [controls, config, trial],
+  );
+  const trialLabel = useMemo(() => {
+    if (!trial || shown === config) return null;
+    const control = controls.find((c) => c.key === trial.key);
+    return control?.kind === "choice" ? (control.options.find((o) => o.value === trial.value)?.label ?? null) : null;
+  }, [controls, config, shown, trial]);
+
+  /** Try a choice's option on the preview without picking it; `null` puts the real settings back. */
+  const tryChoice = useCallback((key: string, value: string | null) => {
+    setTrial((prev) => {
+      if (value === null) return null;
+      return prev?.key === key && prev.value === value ? prev : { key, value };
+    });
+  }, []);
+
+  // A game to play always goes out after the config it belongs to, so the widget is already on sample data when it lands.
   useEffect(() => {
     if (readyTick === 0) return;
-    const message: ConfigMessage = { t: "config", config, sample };
-    frameRef.current?.contentWindow?.postMessage(message, window.location.origin);
-  }, [config, sample, readyTick]);
+    const target = frameRef.current?.contentWindow;
+    if (!target) return;
+    const message: ConfigMessage = { t: "config", config: shown, sample };
+    target.postMessage(message, window.location.origin);
+    if (play.n !== playSent.current) {
+      playSent.current = play.n;
+      const react: ReactMessage = { t: "react", kind: play.kind, n: play.n };
+      target.postMessage(react, window.location.origin);
+    }
+  }, [shown, sample, readyTick, play]);
 
   // Show sample data until there is a valid account, unless the user chose.
   useEffect(() => {
@@ -191,17 +227,20 @@ export function usePlaygroundState(widget: WidgetMeta) {
     setSampleState(value);
   }, []);
 
+  /** Plays a made-up game on sample data (switching to it if the preview is on live numbers). */
+  const tryout = useCallback((kind: string) => {
+    manualSample.current = true;
+    setSampleState(true);
+    setPlay((prev) => ({ kind, n: prev.n + 1 }));
+  }, []);
+
   // ── Settings ─────────────────────────────────────────────────────────────
   const set = useCallback(
     (key: string, value: ConfigValue) => {
       const control = controls.find((c) => c.key === key);
       if (!control) return;
       const clean = sanitizeValue(control, value);
-      setConfig((prev) => {
-        const next: Config = { ...prev, [key]: clean };
-        if (control.kind === "choice" && control.onSelect) Object.assign(next, control.onSelect(String(clean)));
-        return next;
-      });
+      setConfig((prev) => (control.kind === "choice" ? applyChoice(control, prev, String(clean)) : { ...prev, [key]: clean }));
     },
     [controls],
   );
@@ -302,6 +341,9 @@ export function usePlaygroundState(widget: WidgetMeta) {
     configured,
     sample,
     setSample,
+    tryChoice,
+    trialLabel,
+    tryout,
     backdrop,
     setBackdrop,
     anchor,

@@ -85,7 +85,7 @@ export function Inspector() {
 
       <div className="panel" role="tabpanel" id={`panel-${section.id}`} aria-labelledby={`tab-${section.id}`} tabIndex={0}>
         {basic.map((control) => (
-          <ControlView key={control.key} control={control} config={config} onChange={pg.set} lookup={lookup} />
+          <ControlView key={control.key} control={control} config={config} onChange={pg.set} onTry={pg.tryChoice} lookup={lookup} />
         ))}
 
         {advanced.length > 0 && (
@@ -100,7 +100,7 @@ export function Inspector() {
             <summary>Advanced</summary>
             <div className="advanced__body">
               {advanced.map((control) => (
-                <ControlView key={control.key} control={control} config={config} onChange={pg.set} lookup={lookup} />
+                <ControlView key={control.key} control={control} config={config} onChange={pg.set} onTry={pg.tryChoice} lookup={lookup} />
               ))}
             </div>
           </details>

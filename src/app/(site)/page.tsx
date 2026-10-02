@@ -22,6 +22,8 @@ export default function Home() {
               "Live Valorant rank, RR and peak rank",
               "Session stats worked out from match history",
               "Four layouts, including a tall one for vertical streams",
+              "Theme gallery that tries each look on your live preview",
+              "Short, subtle reactions to wins, losses and rank changes",
               "Live preview on a landscape or vertical canvas",
               "One link for OBS, Streamlabs Desktop or TikTok LIVE Studio",
             ],

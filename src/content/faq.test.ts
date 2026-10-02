@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { cumulativeMp, matchesNeeded } from "@/lib/mastery";
 import { GAME_MODES, lengthLabel, typicalMinutes } from "@/lib/modes";
+import { controlsOf } from "@/lib/schema";
+import { defaults, schema } from "@/widgets/valorant-rank/definition";
+import { REACTION_KINDS, REACTION_LABELS } from "@/widgets/valorant-rank/reactions";
 import { faqForLd, masteryFaq, overlayFaq, rankFaq, type FaqItem } from "./faq";
 
 const all: Array<[string, FaqItem[]]> = [
@@ -28,6 +31,36 @@ describe.each(all)("%s FAQ", (_name, items) => {
     const ld = faqForLd(items);
     expect(ld.map((x) => x.q)).toEqual(items.map((i) => i.q));
     expect(ld.map((x) => x.a)).toEqual(items.map((i) => i.paragraphs.join(" ")));
+  });
+});
+
+describe("the overlay FAQ and the editor's controls", () => {
+  // The labels come from the real schema and registry, so the answers can't drift from what the editor says.
+  const labelOf = (key: string) => controlsOf(schema).find((c) => c.key === key)!.label;
+  const sectionOf = (key: string) => schema.sections.find((s) => s.controls.some((c) => c.key === key))!.label;
+
+  it("sends people to the reactions controls and buttons by the labels they carry", () => {
+    const reactions = answer(overlayFaq, /react when I win/);
+    for (const text of [
+      ...REACTION_KINDS.map((kind) => REACTION_LABELS[kind]),
+      labelOf("reactions"),
+      labelOf("animate"),
+      sectionOf("reactions"),
+    ]) {
+      expect(reactions).toContain(text);
+    }
+  });
+
+  it("says the reactions are off when Animate changes is, which is how the editor behaves", () => {
+    expect(answer(overlayFaq, /react when I win/)).toMatch(new RegExp(`off whenever ${labelOf("animate")} is off`));
+    expect(controlsOf(schema).find((c) => c.key === "reactions")?.showWhen?.({ ...defaults, animate: false })).toBe(false);
+  });
+
+  it("sends people to the colour controls by their labels too", () => {
+    const colours = answer(overlayFaq, /own colours and fonts/);
+    expect(colours).toContain(`${sectionOf("accent")}, ${labelOf("accent")}`);
+    expect(colours).toContain("three themes");
+    expect(controlsOf(schema).find((c) => c.key === "preset")).toMatchObject({ display: "gallery" });
   });
 });
 

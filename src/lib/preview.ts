@@ -15,6 +15,12 @@ export type PreviewStatus =
 /** editor → widget */
 export type ConfigMessage = { t: "config"; config: Config; sample: boolean };
 
+/**
+ * editor → widget: play a game that never happened ("Try a game"). Always sent after the config message it belongs to, so
+ * the widget is already showing sample data. `n` counts up, so the same kind twice in a row is two games.
+ */
+export type ReactMessage = { t: "react"; kind: string; n: number };
+
 /** widget → editor */
 export type WidgetMessage =
   | { t: "ready" }

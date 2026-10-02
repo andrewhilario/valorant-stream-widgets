@@ -69,7 +69,14 @@ export const overlayFaq: FaqItem[] = [
   {
     q: "Can I use my own colours and fonts?",
     paragraphs: [
-      "Colours, yes: pick a swatch or type a hex under Look, Accent colour. Three type sets are built in. Panel opacity and corner style are there too.",
+      "Colours, yes: pick a swatch or type a hex under Look, Accent colour. You can also start from one of three themes. Point at a theme card to try it on the preview before you pick it, then change anything. Three type sets are built in, and panel opacity and corner style are there too.",
+    ],
+  },
+  {
+    q: "Does the overlay react when I win, lose or rank up?",
+    paragraphs: [
+      "Yes, quietly. When an update shows a new result, the overlay plays a short reaction: a pop and a pass of light for a win, a small nudge for a loss, and a swelling badge with a ring when your rank changes. It stays still when it first loads, and for games that ended a while ago.",
+      "To see each one without playing a game, press Win, Loss, Rank up or Rank down under the preview. They play on sample data. To turn them off, switch off React to games under Look. They also stay off whenever Animate changes is off.",
     ],
   },
   {

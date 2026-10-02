@@ -44,6 +44,20 @@ export function usePlaygroundPalette(pg: Playground) {
       words: "demo fake preview",
       run: () => pg.setSample(!sample),
     });
+    const tryouts = widget.tryouts;
+    if (tryouts) {
+      const blocked = tryouts.blocked(config);
+      for (const option of tryouts.options) {
+        out.push({
+          id: `try-${option.kind}`,
+          group: "Actions",
+          label: `${tryouts.label}: ${option.label}`,
+          detail: blocked ? `${blocked.message}. Turn it on first` : "Plays on sample data",
+          words: "preview reaction animation game result win loss lose promote demote derank celebrate",
+          run: () => (blocked ? pg.focusControl(blocked.focus) : pg.tryout(option.kind)),
+        });
+      }
+    }
     out.push({
       id: "view",
       group: "Actions",

@@ -39,10 +39,27 @@ export type TextControl = Base & {
   /** A short how-to shown in a disclosure under the field. */
   learnMore?: { summary: string; steps: string[]; href: string; hrefLabel: string };
 };
+/** A miniature of what an option looks like: custom properties for its colours, data attributes for its shape. */
+export type ChoiceSwatch = { vars: Record<string, string>; data: Record<string, string> };
+
+export type ChoiceOption = {
+  value: string;
+  label: string;
+  /** A line under the name in a gallery. */
+  note?: string;
+  /** What a gallery draws for this option. */
+  swatch?: ChoiceSwatch;
+};
+
 export type ChoiceControl = Base & {
   kind: "choice";
-  options: Array<{ value: string; label: string }>;
+  options: ChoiceOption[];
   default: string;
+  /**
+   * Draw the options as cards (each with its swatch) instead of a segmented bar. Hovering a card previews it in the
+   * stage without choosing it.
+   */
+  display?: "gallery";
   /** Extra keys to set when an option is chosen — lets a preset apply a bundle. */
   onSelect?: (value: string) => Config;
 };
@@ -199,4 +216,19 @@ export function secretHash(schema: WidgetSchema, config: Config, mask = false): 
 
 export function hasFlag(list: ConfigValue, flag: string): boolean {
   return typeof list === "string" && list.split(",").includes(flag);
+}
+
+/** The config with `value` picked for a choice: the value itself, then whatever its `onSelect` sets alongside. */
+export function applyChoice(control: ChoiceControl, config: Config, value: string): Config {
+  return { ...config, [control.key]: value, ...(control.onSelect?.(value) ?? {}) };
+}
+
+/**
+ * The config as it would be if `value` were picked for the choice `key`, for previewing it without choosing it.
+ * Anything that isn't a valid pick of a choice leaves the config as it was.
+ */
+export function withChoice(controls: Control[], config: Config, key: string, value: string): Config {
+  const control = controls.find((c) => c.key === key);
+  if (!control || control.kind !== "choice" || !control.options.some((o) => o.value === value)) return config;
+  return applyChoice(control, config, value);
 }

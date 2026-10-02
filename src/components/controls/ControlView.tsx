@@ -4,6 +4,7 @@ import { useId } from "react";
 import type { PreviewStatus } from "@/lib/preview";
 import { hasFlag, type Config, type Control, type ConfigValue } from "@/lib/schema";
 import { FieldGroup } from "./Field";
+import { Gallery } from "./Gallery";
 import { Range } from "./Range";
 import { Segmented } from "./Segmented";
 import { Swatches } from "./Swatches";
@@ -23,6 +24,8 @@ type Props = {
   config: Config;
   onChange: (key: string, value: ConfigValue) => void;
   lookup: Lookup;
+  /** Try a choice's option on the preview without picking it (a gallery calls this as the pointer moves over its cards). */
+  onTry?: (key: string, value: string | null) => void;
 };
 
 function Flags({ control, config, onChange }: Props & { control: Extract<Control, { kind: "flags" }> }) {
@@ -62,7 +65,7 @@ function Flags({ control, config, onChange }: Props & { control: Extract<Control
 
 /** Renders one schema control as the right widget. */
 export function ControlView(props: Props) {
-  const { control, config, onChange, lookup } = props;
+  const { control, config, onChange, lookup, onTry } = props;
   if (control.showWhen && !control.showWhen(config)) return null;
 
   const value = config[control.key];
@@ -73,7 +76,11 @@ export function ControlView(props: Props) {
         <TextField control={control} value={String(value ?? "")} onChange={(v) => onChange(control.key, v)} lookup={lookup} />
       );
     case "choice":
-      return <Segmented control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} />;
+      return control.display === "gallery" ? (
+        <Gallery control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} onTry={onTry} />
+      ) : (
+        <Segmented control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} />
+      );
     case "range":
       return <Range control={control} value={Number(value)} onChange={(v) => onChange(control.key, v)} />;
     case "toggle":

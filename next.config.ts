@@ -74,6 +74,17 @@ export default (phase: string): NextConfig => {
     );
   }
 
+  // A scheme-less value such as "localhost:3000" is fine (the site adds it). One that isn't an address at all falls back to
+  // localhost, which is worth saying out loud, in development and in a build.
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (configured && !process.env.TALLY_SITE_URL_BAD_WARNED && !URL.canParse(/^[a-z][a-z0-9+.-]*:\/\//i.test(configured) ? configured : `https://${configured}`)) {
+    process.env.TALLY_SITE_URL_BAD_WARNED = "1";
+    console.warn(
+      `\n⚠  NEXT_PUBLIC_SITE_URL is “${configured}”, which isn't a web address, so http://localhost:3000 is being used instead.\n` +
+        "   Use something like https://tally.example (or localhost:3000 while developing).\n",
+    );
+  }
+
   return {
     reactStrictMode: true,
     poweredByHeader: false,

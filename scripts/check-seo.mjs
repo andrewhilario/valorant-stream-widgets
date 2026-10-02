@@ -10,7 +10,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const APP = join(process.cwd(), ".next", "server", "app");
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000").replace(/\/+$/, "");
 
 const failures = [];
 const warnings = [];
@@ -52,6 +51,10 @@ if (!sitemap) {
 }
 
 const urls = all(sitemap, /<loc>([^<]+)<\/loc>/g).map((m) => decode(m[1]));
+
+// The address the site was built for, read from its own sitemap rather than from NEXT_PUBLIC_SITE_URL, so this checks
+// that every page agrees with it however the variable was written ("tally.example", "https://tally.example/", ...).
+const SITE = urls.length ? new URL(urls[0]).origin : "";
 const pagePath = (url) => new URL(url).pathname;
 const fileFor = (path) => (path === "/" ? "index.html" : `${path.slice(1)}.html`);
 
@@ -61,8 +64,11 @@ for (const [i, m] of all(sitemap, /<lastmod>([^<]+)<\/lastmod>/g).entries()) {
   check(/^\d{4}-\d{2}-\d{2}/.test(m[1]) && !Number.isNaN(Date.parse(m[1])), "sitemap.xml", `lastmod #${i + 1} isn't a valid date: ${m[1]}`);
 }
 for (const url of urls) check(url.startsWith(`${SITE}/`) || url === SITE, "sitemap.xml", `${url} doesn't start with ${SITE}`);
-if (SITE.startsWith("http://localhost")) {
-  warn("site address", "NEXT_PUBLIC_SITE_URL isn't set, so canonical links and the sitemap point at localhost. Set it before deploying.");
+if (SITE && /^(localhost|127\.0\.0\.1|\[::1\]|.*\.localhost|.*\.test)$/i.test(new URL(SITE).hostname)) {
+  warn(
+    "site address",
+    `The site was built for ${SITE}, so canonical links, the sitemap and social cards point at a local address. Set NEXT_PUBLIC_SITE_URL to your public address before deploying.`,
+  );
 }
 
 const robots = read("robots.txt.body") ?? "";

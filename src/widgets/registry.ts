@@ -2,6 +2,16 @@ import { looksLikeKey } from "@/lib/henrik-client";
 import { guessRegion, parseRiotId } from "@/lib/riot";
 import type { Config, WidgetSchema } from "@/lib/schema";
 import * as valorantRank from "./valorant-rank/definition";
+import { REACTION_KINDS, REACTION_LABELS } from "./valorant-rank/reactions";
+
+/** Buttons under the preview that make the widget play something once, without waiting for it to happen for real. */
+export type Tryouts = {
+  /** The group's name, e.g. "Try a game". */
+  label: string;
+  options: Array<{ kind: string; label: string }>;
+  /** What stops them working right now, and which control fixes it; null when they work. */
+  blocked: (config: Config) => { message: string; focus: string } | null;
+};
 
 export type WidgetMeta = {
   id: string;
@@ -14,6 +24,7 @@ export type WidgetMeta = {
   firstRun?: (defaults: Config, env: { timeZone?: string }) => Config;
   /** What's still missing for a working OBS link, and which control to send the user to; null when complete. */
   needs: (config: Config) => { message: string; focus: string } | null;
+  tryouts?: Tryouts;
 };
 
 // Adding a widget: write its definition (schema + defaults), its renderer and
@@ -30,6 +41,15 @@ export const widgets: Record<string, WidgetMeta> = {
       if (parseRiotId(String(config.riotId ?? "")) === null) return { message: "Add your Riot ID", focus: "riotId" };
       if (!looksLikeKey(String(config.apiKey ?? ""))) return { message: "Add your HenrikDev key", focus: "apiKey" };
       return null;
+    },
+    tryouts: {
+      label: "Try a game",
+      options: REACTION_KINDS.map((kind) => ({ kind, label: REACTION_LABELS[kind] })),
+      blocked: (config) => {
+        if (config.animate === false) return { message: "Animate changes is off", focus: "animate" };
+        if (config.reactions === false) return { message: "React to games is off", focus: "reactions" };
+        return null;
+      },
     },
   },
 };

@@ -12,6 +12,75 @@ body {
   background: transparent;
 }
 
+/* Registered as colours so that, in the editor, changing the theme cross-fades instead of cutting: every rule below
+   reads these, so one transition on .w moves them all. A browser that doesn't know @property skips the block and the
+   theme simply changes at once. In OBS the settings never change after load, so nothing ever fades. */
+@property --w-surface {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-border {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-muted {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-track {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-tier {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-gain {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-loss {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-gain-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --w-loss-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 .w-root {
   position: fixed;
   top: 0;
@@ -27,6 +96,7 @@ body {
   --w-track-radius: 0;
   --w-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --w-dur: 400ms;
+  --w-theme-dur: 260ms;
 
   position: relative;
   box-sizing: border-box;
@@ -39,7 +109,19 @@ body {
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   opacity: 0;
-  transition: opacity var(--w-dur) var(--w-ease);
+  transition:
+    opacity var(--w-dur) var(--w-ease),
+    --w-surface var(--w-theme-dur) ease-out,
+    --w-border var(--w-theme-dur) ease-out,
+    --w-ink var(--w-theme-dur) ease-out,
+    --w-muted var(--w-theme-dur) ease-out,
+    --w-track var(--w-theme-dur) ease-out,
+    --w-accent var(--w-theme-dur) ease-out,
+    --w-tier var(--w-theme-dur) ease-out,
+    --w-gain var(--w-theme-dur) ease-out,
+    --w-loss var(--w-theme-dur) ease-out,
+    --w-gain-bg var(--w-theme-dur) ease-out,
+    --w-loss-bg var(--w-theme-dur) ease-out;
 }
 
 .w *,
@@ -598,6 +680,286 @@ body {
   margin: 0 0 0 0.5em;
 }
 
+/* ── Reactions: a game just ended ──────────────────────────────────────── */
+
+/* Widget.tsx sets data-react="win | loss | up | down" for as long as a reaction plays (REACTION_MS in reactions.ts, keep
+   them in step) and not at all with Animate changes off, React to games off, or reduced motion asked for. Nothing here
+   moves anything but transform and opacity, so it stays cheap in a browser source. */
+
+.w[data-react="win"],
+.w[data-react="up"] {
+  --w-fx: var(--w-gain-glow);
+}
+
+.w[data-react="loss"],
+.w[data-react="down"] {
+  --w-fx: var(--w-loss-glow);
+}
+
+.w__fx {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  border-radius: var(--w-radius);
+  pointer-events: none;
+}
+
+/* Light resting on the panel's inside edge, then going. Static; only its opacity moves. */
+.w__fx-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 1.5em 0.125em var(--w-fx);
+  opacity: 0;
+}
+
+/* A band of light that crosses the panel once. */
+.w__fx-sheen {
+  position: absolute;
+  top: -25%;
+  bottom: -25%;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(100deg, transparent 0%, var(--w-fx) 50%, transparent 100%);
+  opacity: 0;
+  transform: translateX(-120%) skewX(-12deg);
+}
+
+.w__head > .w__badge {
+  position: relative;
+}
+
+/* The ring a new rank sends out from its badge. */
+.w__head > .w__badge::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border: 0.125em solid var(--w-tier);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes w-glow {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes w-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%) skewX(-12deg);
+  }
+  15% {
+    opacity: 0.75;
+  }
+  85% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(300%) skewX(-12deg);
+  }
+}
+
+@keyframes w-pop {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.14);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes w-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes w-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-0.2em);
+  }
+  35% {
+    transform: translateX(0.18em);
+  }
+  55% {
+    transform: translateX(-0.12em);
+  }
+  75% {
+    transform: translateX(0.06em);
+  }
+}
+
+@keyframes w-dip {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 0.7;
+    transform: translateY(0.1em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes w-badge-up {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.22);
+  }
+  60% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes w-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes w-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes w-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.35em);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Win: a pop on the change, a bump on the number, one pass of light. */
+.w[data-react="win"] .w__fx-sheen {
+  animation: w-sheen 1100ms var(--w-ease) 60ms both;
+}
+
+.w[data-react="win"] .w__fx-glow {
+  animation: w-glow 1100ms ease-out both;
+}
+
+.w[data-react="win"] .w__delta {
+  animation: w-pop 560ms var(--w-ease) both;
+}
+
+.w[data-react="win"] .w__rr-n {
+  transform-origin: left center;
+  animation: w-bump 520ms var(--w-ease) both;
+}
+
+/* Loss: no fanfare. The change nudges, the number dips, a little red rests on the edge. */
+.w[data-react="loss"] .w__fx-glow {
+  animation: w-glow 900ms ease-out both;
+}
+
+.w[data-react="loss"] .w__delta {
+  animation: w-shake 480ms ease-out both;
+}
+
+.w[data-react="loss"] .w__rr-n {
+  animation: w-dip 480ms var(--w-ease) both;
+}
+
+/* Rank up: the badge swells and sends out a ring, the name rises into place, light crosses slowly. */
+.w[data-react="up"] .w__fx-sheen {
+  animation: w-sheen 1500ms var(--w-ease) 120ms both;
+}
+
+.w[data-react="up"] .w__fx-glow {
+  animation: w-glow 1500ms ease-out both;
+}
+
+.w[data-react="up"] .w__head > .w__badge {
+  animation: w-badge-up 760ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.w[data-react="up"] .w__head > .w__badge::after {
+  animation: w-ring 1000ms ease-out 80ms both;
+}
+
+.w[data-react="up"] .w__tier {
+  animation: w-rise 520ms var(--w-ease) 120ms both;
+}
+
+.w[data-react="up"] .w__delta {
+  animation: w-pop 560ms var(--w-ease) 200ms both;
+}
+
+/* Rank down: the badge sinks a little, the name drops in, the change nudges. */
+.w[data-react="down"] .w__fx-glow {
+  animation: w-glow 1100ms ease-out both;
+}
+
+.w[data-react="down"] .w__head > .w__badge {
+  animation: w-dip 700ms var(--w-ease) both;
+}
+
+.w[data-react="down"] .w__tier {
+  animation: w-drop 520ms var(--w-ease) 100ms both;
+}
+
+.w[data-react="down"] .w__delta {
+  animation: w-shake 480ms ease-out both;
+}
+
 /* ── Utilities ─────────────────────────────────────────────────────────── */
 
 .w__sr {
@@ -615,5 +977,19 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .w {
     --w-dur: 150ms;
+    --w-theme-dur: 0ms;
+  }
+
+  /* Widget.tsx doesn't start a reaction for someone who asked for less motion; this is the second lock on the door. */
+  .w__fx {
+    display: none;
+  }
+
+  .w[data-react] .w__delta,
+  .w[data-react] .w__rr-n,
+  .w[data-react] .w__tier,
+  .w[data-react] .w__head > .w__badge,
+  .w[data-react] .w__head > .w__badge::after {
+    animation: none;
   }
 }

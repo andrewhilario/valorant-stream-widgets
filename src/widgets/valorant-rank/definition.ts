@@ -2,7 +2,17 @@ import { looksLikeKey } from "@/lib/henrik-client";
 import { defaultsOf, hasFlag, type Config, type Section, type WidgetSchema } from "@/lib/schema";
 import { parseRiotId, type Platform, type Region } from "@/lib/riot";
 import type { SessionMode } from "@/lib/session";
-import { ACCENT_SWATCHES, PRESETS, type Corners, type FontSet, type PresetId, type ProgressColor, type Signals } from "./themes";
+import {
+  ACCENT_SWATCHES,
+  PRESETS,
+  noteFor,
+  swatchFor,
+  type Corners,
+  type FontSet,
+  type PresetId,
+  type ProgressColor,
+  type Signals,
+} from "./themes";
 
 export const WIDGET_ID = "valorant-rank";
 export const WIDGET_NAME = "Valorant rank overlay";
@@ -26,6 +36,7 @@ export type RankConfig = {
   signals: Signals;
   marks: boolean;
   animate: boolean;
+  reactions: boolean;
   sessionMode: SessionMode;
   gap: number;
   windowHours: number;
@@ -199,9 +210,15 @@ export const sections: Section[] = [
         key: "preset",
         param: "t",
         label: "Theme",
-        help: "A starting point. Everything below still changes.",
-        keywords: ["preset", "tactical", "clean", "paper", "light", "dark", "style"],
-        options: (Object.keys(PRESETS) as PresetId[]).map((id) => ({ value: id, label: PRESETS[id].label })),
+        help: "Point at one to try it on the preview, then pick it. Everything below still changes.",
+        keywords: ["preset", "tactical", "clean", "paper", "light", "dark", "style", "gallery"],
+        options: (Object.keys(PRESETS) as PresetId[]).map((id) => ({
+          value: id,
+          label: PRESETS[id].label,
+          note: noteFor(id),
+          swatch: swatchFor(id),
+        })),
+        display: "gallery",
         default: "tactical",
         onSelect: presetBundle,
       },
@@ -296,6 +313,16 @@ export const sections: Section[] = [
         label: "Animate changes",
         help: "RR counts up and the bar slides. Off for a fully static overlay.",
         keywords: ["motion", "animation", "static", "transition"],
+        default: true,
+      },
+      {
+        kind: "toggle",
+        key: "reactions",
+        param: "rx",
+        label: "React to games",
+        help: "A soft glow and pop when a game ends or your rank changes. Try one with the buttons under the preview.",
+        keywords: ["win", "loss", "rank up", "promotion", "demotion", "celebrate", "effects", "animation", "glow"],
+        showWhen: (c) => c.animate === true,
         default: true,
       },
     ],

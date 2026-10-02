@@ -5,6 +5,7 @@ import type { RankData } from "@/lib/rank-types";
 import { computeSession } from "@/lib/session";
 import { progressFor, tierFamily, tierStep } from "@/lib/tiers";
 import { flagVisible, type RankConfig } from "./definition";
+import { REACTION_MS, type Reaction, type ReactionKind } from "./reactions";
 import { resolveTheme, tierColor } from "./themes";
 import "./widget.css";
 
@@ -23,10 +24,58 @@ export type WidgetProps = {
   now: number;
   /** Fonts and first data are in — fade the widget in. */
   ready: boolean;
+  /** The latest thing a game did (see reactions.ts). Played once per `n`, and only if the settings allow it. */
+  reaction?: Reaction | null;
 };
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * Which reaction is playing right now, or null. Each new `reaction.n` plays once, for the length of its animation.
+ * A reaction that arrives while reactions are off, or when the viewer asked for less motion, is dropped rather than
+ * saved up for later.
+ *
+ * A new reaction is picked up while rendering, not in an effect, so its marker is in the same frame as the numbers that
+ * caused it and the animations start with them. (An effect would run a frame late: the new rank would show for a blink,
+ * then be hidden by the animation's first keyframe.) If one is still playing, the marker comes off for a frame first, so
+ * the animations start over instead of carrying on.
+ */
+function useReaction(reaction: Reaction | null | undefined, enabled: boolean): ReactionKind | null {
+  const [playing, setPlaying] = useState<ReactionKind | null>(null);
+  const [again, setAgain] = useState<ReactionKind | null>(null);
+  const [seen, setSeen] = useState<number | null>(reaction?.n ?? null);
+
+  if (reaction && reaction.n !== seen) {
+    setSeen(reaction.n);
+    if (enabled && !prefersReducedMotion()) {
+      if (playing === null) {
+        setPlaying(reaction.kind);
+        setAgain(null);
+      } else {
+        setPlaying(null);
+        setAgain(reaction.kind);
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (again === null) return;
+    const frame = requestAnimationFrame(() => {
+      setPlaying(again);
+      setAgain(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [again]);
+
+  useEffect(() => {
+    if (playing === null) return;
+    const stop = setTimeout(() => setPlaying(null), REACTION_MS[playing]);
+    return () => clearTimeout(stop);
+  }, [playing]);
+
+  return enabled ? playing : null;
 }
 
 /** Counts to a new value over 400 ms. The final value is what the DOM holds. */
@@ -97,11 +146,12 @@ function Badge({
 
 type Stat = { key: string; label: string; lead?: boolean; value: ReactNode; sub?: string };
 
-export function RankWidget({ config, data, icons, now, ready }: WidgetProps) {
+export function RankWidget({ config, data, icons, now, ready, reaction = null }: WidgetProps) {
   const theme = useMemo(
     () => resolveTheme({ preset: config.preset, accent: config.accent, opacity: config.opacity, signals: config.signals }),
     [config.preset, config.accent, config.opacity, config.signals],
   );
+  const reacting = useReaction(reaction, config.animate && config.reactions);
 
   const current = data?.current ?? null;
   const tierId = current?.tierId ?? 0;
@@ -187,7 +237,8 @@ export function RankWidget({ config, data, icons, now, ready }: WidgetProps) {
       progressBlock = (
         <div className="w__progress">
           <div className="w__track" role="img" aria-label={`${progress.rr} of 100 RR`}>
-            <div className="w__fill" style={{ "--p": progress.rr / 100 } as CSSProperties} />
+            {/* Keyed by tier: a new rank starts the bar over, so it appears at its new length instead of sliding back. */}
+            <div key={tierId} className="w__fill" style={{ "--p": progress.rr / 100 } as CSSProperties} />
           </div>
           {config.layout !== "strip" && (
             <p className="w__pmeta">
@@ -236,6 +287,7 @@ export function RankWidget({ config, data, icons, now, ready }: WidgetProps) {
       data-animate={config.animate ? "on" : "off"}
       data-ready={ready ? "true" : "false"}
       data-light={theme.light ? "true" : "false"}
+      data-react={reacting ?? undefined}
       style={style}
     >
       <div className="w__panel">
@@ -254,7 +306,8 @@ export function RankWidget({ config, data, icons, now, ready }: WidgetProps) {
               {current && tierId >= 3 ? (
                 <>
                   <span className="w__rr-n">
-                    <Tick value={current.rr} animate={config.animate} />
+                    {/* Keyed by tier for the same reason: RR starts over in a new rank, so it shows the new number at once. */}
+                    <Tick key={tierId} value={current.rr} animate={config.animate} />
                   </span>
                   <span className="w__rr-u">RR</span>
                 </>
@@ -299,6 +352,13 @@ export function RankWidget({ config, data, icons, now, ready }: WidgetProps) {
           Valorant rank {current?.tier ?? "loading"}
           {current && tierId >= 3 ? `, ${current.rr} RR` : ""}
         </p>
+
+        {reacting && (
+          <span className="w__fx" aria-hidden="true">
+            <span className="w__fx-glow" />
+            <span className="w__fx-sheen" />
+          </span>
+        )}
       </div>
     </div>
   );

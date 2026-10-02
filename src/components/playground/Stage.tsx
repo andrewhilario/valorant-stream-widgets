@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CANVAS, type Format } from "@/lib/canvas";
 import { Status } from "./Status";
 import { usePlayground, type Anchor, type Backdrop } from "./usePlayground";
+import { useStageTilt } from "./useStageTilt";
 
 /** Title-safe margin, in canvas pixels. */
 const MARGIN = 48;
@@ -39,6 +40,8 @@ export function Title() {
 
 export function StageToolbar() {
   const pg = usePlayground();
+  const tryouts = pg.widget.tryouts;
+  const blocked = tryouts?.blocked(pg.config) ?? null;
 
   return (
     <div className="toolbar" role="group" aria-label="Preview options">
@@ -124,6 +127,27 @@ export function StageToolbar() {
           </label>
         </div>
       </div>
+
+      {tryouts && (
+        <div className="tool tool--wrap" role="group" aria-labelledby="tool-try">
+          <span className="tool__label" id="tool-try">
+            {tryouts.label}
+          </span>
+          {blocked ? (
+            <button type="button" className="linkbtn linkbtn--sm" onClick={() => pg.focusControl(blocked.focus)}>
+              {blocked.message}. Turn it on
+            </button>
+          ) : (
+            <div className="seg seg--sm">
+              {tryouts.options.map((option) => (
+                <button key={option.kind} type="button" className="seg__btn" onClick={() => pg.tryout(option.kind)}>
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -155,7 +179,9 @@ function SampleToggle() {
 export function Stage() {
   const pg = usePlayground();
   const areaRef = useRef<HTMLDivElement>(null);
+  const fitRef = useRef<HTMLDivElement>(null);
   const [area, setArea] = useState({ w: 600, h: 340 });
+  const nextGame = useRef(0);
 
   useEffect(() => {
     const el = areaRef.current;
@@ -184,10 +210,31 @@ export function Stage() {
     [pg.anchor.includes("t") ? "top" : "bottom"]: MARGIN,
   };
 
+  // Pointing at the widget leans it; clicking it plays the next game in the list (win, loss, rank up, rank down, and round).
+  const tryouts = pg.widget.tryouts;
+  const canPlay = Boolean(tryouts && tryouts.options.length > 0 && tryouts.blocked(pg.config) === null);
+  const pointer = useStageTilt({
+    fitRef,
+    frameRef: pg.frameRef,
+    scale: k,
+    canPlay,
+    onPlay: () => {
+      if (!tryouts) return;
+      pg.tryout(tryouts.options[nextGame.current % tryouts.options.length].kind);
+      nextGame.current += 1;
+    },
+  });
+
   return (
     <div className="stage">
       <div className="stage__area" ref={areaRef} data-format={pg.format} data-view={pg.view}>
-        <div className="stage__fit" style={{ width: canvas.w * k, height: canvas.h * k }} data-backdrop={pg.backdrop}>
+        <div
+          className="stage__fit"
+          ref={fitRef}
+          style={{ width: canvas.w * k, height: canvas.h * k }}
+          data-backdrop={pg.backdrop}
+          {...pointer}
+        >
           <div className="stage__canvas" style={{ width: canvas.w, height: canvas.h, transform: `scale(${k})` }}>
             {pg.initialSrc && (
               <iframe
@@ -208,13 +255,30 @@ export function Stage() {
           <Status />
           <SampleToggle />
         </div>
-        <p className="stage__caption">
-          <span className="mono">
-            {canvas.w}&nbsp;×&nbsp;{canvas.h}
-          </span>{" "}
-          canvas, shown at <span className="mono">{percent}%</span>
-          {pg.view === "phone" && <> — how it reads on a player about {PHONE_W}&nbsp;px wide</>}
-        </p>
+        <div className="stage__notes" data-trial={pg.trialLabel ? "true" : "false"}>
+          <p className="stage__caption">
+            <span className="mono">
+              {canvas.w}&nbsp;×&nbsp;{canvas.h}
+            </span>{" "}
+            canvas, shown at <span className="mono">{percent}%</span>
+            {pg.view === "phone" && <> — how it reads on a player about {PHONE_W}&nbsp;px wide</>}
+            {canPlay && (
+              <span className="stage__tip">
+                {" "}
+                · <span data-input="mouse">Click</span>
+                <span data-input="touch">Tap</span> the widget to try a game
+              </span>
+            )}
+          </p>
+          {/* Only a mouse can point at a theme without picking it, so this is for the eyes alone. */}
+          <p className="stage__caption stage__caption--trial" aria-hidden="true">
+            {pg.trialLabel && (
+              <>
+                Previewing <b>{pg.trialLabel}</b>. Click it to keep it.
+              </>
+            )}
+          </p>
+        </div>
       </div>
 
       {pg.format === "vertical" && pg.config.layout !== "stack" && (

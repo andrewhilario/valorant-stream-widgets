@@ -3,6 +3,7 @@
 // works in old OBS browser builds.
 
 import { cssRgb, ensureContrast, hexToRgb, oklchToRgb, type Oklch, type Rgb } from "@/lib/color";
+import type { ChoiceSwatch } from "@/lib/schema";
 import type { TierFamily } from "@/lib/tiers";
 
 export type PresetId = "tactical" | "clean" | "paper";
@@ -146,6 +147,9 @@ export function resolveTheme({ preset, accent, opacity, signals }: ThemeInput): 
       "--w-loss": cssRgb(loss),
       "--w-gain-bg": cssRgb(gain, 0.16),
       "--w-loss-bg": cssRgb(loss, 0.16),
+      // The soft light a win or a loss throws across the panel (see the reactions in widget.css).
+      "--w-gain-glow": cssRgb(gain, 0.34),
+      "--w-loss-glow": cssRgb(loss, 0.3),
     },
   };
 }
@@ -153,4 +157,25 @@ export function resolveTheme({ preset, accent, opacity, signals }: ThemeInput): 
 /** Rank-family colour, guaranteed visible on the panel. */
 export function tierColor(family: TierFamily, surface: Rgb): string {
   return cssRgb(ensureContrast(oklchToRgb(TIER_COLORS[family]), surface, 3));
+}
+
+const CORNER_WORDS: Record<Corners, string> = { sharp: "Sharp", chamfer: "Chamfer", round: "Round" };
+
+/** The line under a theme's name in the gallery: light or dark, and how its corners are cut. */
+export function noteFor(id: PresetId): string {
+  const p = PRESETS[id];
+  return `${p.light ? "Light" : "Dark"} · ${CORNER_WORDS[p.bundle.corners]}`;
+}
+
+/**
+ * What the theme gallery draws for a preset: its own colours, fully opaque, on a Diamond rank, plus the traits that change
+ * the shape of it. The gallery's stylesheet reads these the way widget.css does, so a card is the widget in miniature.
+ */
+export function swatchFor(id: PresetId): ChoiceSwatch {
+  const p = PRESETS[id];
+  const theme = resolveTheme({ preset: id, accent: "", opacity: 100, signals: "standard" });
+  return {
+    vars: { ...theme.vars, "--w-tier": tierColor("diamond", theme.surface) },
+    data: { corners: p.bundle.corners, marks: String(p.bundle.marks), progress: p.bundle.progress, light: String(p.light) },
+  };
 }

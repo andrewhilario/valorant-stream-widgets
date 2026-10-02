@@ -24,3 +24,26 @@ describe("first run", () => {
     expect(widget.firstRun?.(defaults, { timeZone: "Europe/Paris" }).region).toBe("eu");
   });
 });
+
+describe("try a game", () => {
+  const tryouts = widget.tryouts!;
+
+  it("offers the four things a game can do, in the order the preview cycles through them", () => {
+    expect(tryouts.label).toBe("Try a game");
+    expect(tryouts.options.map((o) => o.kind)).toEqual(["win", "loss", "up", "down"]);
+    expect(tryouts.options.map((o) => o.label)).toEqual(["Win", "Loss", "Rank up", "Rank down"]);
+  });
+
+  it("works out of the box", () => {
+    expect(tryouts.blocked(defaults)).toBeNull();
+  });
+
+  it("says what's in the way, and which setting fixes it", () => {
+    expect(tryouts.blocked({ ...defaults, animate: false })).toEqual({ message: "Animate changes is off", focus: "animate" });
+    expect(tryouts.blocked({ ...defaults, reactions: false })).toEqual({ message: "React to games is off", focus: "reactions" });
+  });
+
+  it("points at Animate changes first, since React to games is hidden while that is off", () => {
+    expect(tryouts.blocked({ ...defaults, animate: false, reactions: false })?.focus).toBe("animate");
+  });
+});

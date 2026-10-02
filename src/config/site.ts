@@ -1,18 +1,21 @@
 // One place for the product's name and outbound links.
 
+import { resolveSiteAddress } from "@/lib/site-url";
+
+const address = resolveSiteAddress(process.env.NEXT_PUBLIC_SITE_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL);
+
 export const site = {
   name: "Tally",
   tagline: "Free Valorant stream tools",
   description:
     "A free Valorant rank overlay for OBS and TikTok LIVE. Live rank, RR and session stats as a Browser Source. Pick a look, copy one link, no account.",
   /**
-   * The public URL, used for canonical links, the sitemap and social cards.
-   * Set NEXT_PUBLIC_SITE_URL once you have a domain. On Vercel the production
-   * URL is picked up automatically, so previews still get sensible links.
+   * The public address, used for canonical links, the sitemap and social cards: an origin with no trailing slash.
+   * Set NEXT_PUBLIC_SITE_URL once you have a domain (the https:// may be left off). On Vercel the production
+   * host is picked up automatically, so previews still get sensible links. A value that isn't an address
+   * falls back to localhost instead of crashing the pages; see lib/site-url.ts.
    */
-  url:
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
+  url: address.url,
 } as const;
 
 /** Buy Me a Coffee. The page link, plus the floating widget's settings. */

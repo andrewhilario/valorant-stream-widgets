@@ -1,8 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { defaults, flagVisible, readConfig, schema } from "@/widgets/valorant-rank/definition";
-import { fromLocation, fromParams, hasFlag, sanitize, sanitizeValue, secretHash, toParams, controlsOf } from "./schema";
+import {
+  applyChoice,
+  fromLocation,
+  fromParams,
+  hasFlag,
+  sanitize,
+  sanitizeValue,
+  secretHash,
+  toParams,
+  controlsOf,
+  withChoice,
+  type ChoiceControl,
+} from "./schema";
 
 const control = (key: string) => controlsOf(schema).find((c) => c.key === key)!;
+const choice = (key: string) => {
+  const found = control(key);
+  if (found.kind !== "choice") throw new Error(`${key} is not a choice`);
+  return found satisfies ChoiceControl;
+};
 
 describe("link format", () => {
   it("is empty when nothing differs from the defaults", () => {
@@ -36,6 +53,7 @@ describe("link format", () => {
       signals: "safe",
       marks: false,
       animate: false,
+      reactions: false,
       sessionMode: "window",
       gap: 6,
       windowHours: 12,
@@ -176,5 +194,71 @@ describe("presets", () => {
     if (preset.kind !== "choice" || !preset.onSelect) throw new Error("preset control has no onSelect");
     const bundle = preset.onSelect("tactical");
     for (const [key, value] of Object.entries(bundle)) expect(defaults[key]).toBe(value);
+  });
+});
+
+describe("picking a choice", () => {
+  it("sets the value and then whatever the option bundles with it, and leaves the rest alone", () => {
+    const start = { ...defaults, riotId: "ainz#und3d", scale: 140, accent: "ff4655" };
+    const picked = applyChoice(choice("preset"), start, "paper");
+    expect(picked).toMatchObject({ preset: "paper", corners: "sharp", font: "grotesk", accent: "", riotId: "ainz#und3d", scale: 140 });
+  });
+
+  it("does not change what it was given", () => {
+    const start = { ...defaults };
+    applyChoice(choice("preset"), start, "clean");
+    expect(start).toEqual(defaults);
+  });
+
+  it("is a plain value change for a choice that bundles nothing", () => {
+    expect(applyChoice(choice("layout"), defaults, "strip")).toEqual({ ...defaults, layout: "strip" });
+  });
+
+  it("previews a pick the way picking it would, without touching the settings", () => {
+    const controls = controlsOf(schema);
+    const start = { ...defaults, scale: 150 };
+    expect(withChoice(controls, start, "preset", "clean")).toEqual(applyChoice(choice("preset"), start, "clean"));
+    expect(start).toEqual({ ...defaults, scale: 150 });
+  });
+
+  it("ignores anything that isn't a valid pick of a choice", () => {
+    const controls = controlsOf(schema);
+    expect(withChoice(controls, defaults, "preset", "neon")).toBe(defaults);
+    expect(withChoice(controls, defaults, "nope", "clean")).toBe(defaults);
+    expect(withChoice(controls, defaults, "scale", "120")).toBe(defaults);
+  });
+});
+
+describe("the theme gallery", () => {
+  const theme = choice("preset");
+
+  it("is drawn as cards, one miniature per theme", () => {
+    expect(theme.display).toBe("gallery");
+    expect(theme.options.length).toBeGreaterThanOrEqual(3);
+    for (const option of theme.options) {
+      expect(option.note, option.value).toBeTruthy();
+      expect(option.swatch, option.value).toBeDefined();
+    }
+  });
+
+  it("leaves the other choices as plain segmented bars", () => {
+    for (const key of ["region", "platform", "layout", "corners", "font", "progress", "signals", "sessionMode"]) {
+      expect(choice(key).display, key).toBeUndefined();
+    }
+  });
+});
+
+describe("the reactions setting", () => {
+  it("is on by default, so a link without it reacts, and a link that turns it off says so", () => {
+    expect(defaults.reactions).toBe(true);
+    expect(toParams(schema, defaults).has("rx")).toBe(false);
+    expect(toParams(schema, { ...defaults, reactions: false }).get("rx")).toBe("0");
+    expect(fromParams(schema, new URLSearchParams("rx=0")).reactions).toBe(false);
+  });
+
+  it("is offered only while the overlay animates at all", () => {
+    const reactions = control("reactions");
+    expect(reactions.showWhen?.({ ...defaults, animate: true })).toBe(true);
+    expect(reactions.showWhen?.({ ...defaults, animate: false })).toBe(false);
   });
 });

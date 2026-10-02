@@ -17,6 +17,12 @@
 .tool__label {
   color: var(--color-muted);
   font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* A group too wide for the row it's on puts its label above it instead of squeezing or clipping the buttons. */
+.tool--wrap {
+  flex-wrap: wrap;
 }
 
 /* ── Stage: a 1920 × 1080 canvas, scaled to fit ──────────────────────────── */
@@ -125,6 +131,39 @@
   /* Match the widget page's colour scheme, or the browser paints an opaque backdrop behind the frame. */
   color-scheme: normal;
   pointer-events: none;
+  /* Pointing at the widget leans it a few degrees toward the pointer, and pressing it dips it (useStageTilt.ts sets
+     --tilt-x, --tilt-y and the data attributes). Only this editor's preview does this: the page OBS loads never does.
+     At rest there is no transform at all, so the preview is exactly as sharp as it was. It settles back slowly and
+     follows the pointer closely. */
+  transform: none;
+  transition: transform var(--dur-long) var(--ease-out);
+}
+
+.stage__frame[data-lean="true"],
+.stage__frame[data-press="true"] {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(var(--tilt-s, 1));
+}
+
+.stage__frame[data-lean="true"] {
+  transition-duration: var(--dur-micro);
+}
+
+.stage__frame[data-press="true"] {
+  --tilt-s: 0.985;
+}
+
+/* Clicking the widget plays a game, so say so. */
+.stage__fit[data-over="true"] {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage__frame,
+  .stage__frame[data-lean="true"],
+  .stage__frame[data-press="true"] {
+    transform: none;
+    transition: none;
+  }
 }
 
 .stage__foot {
@@ -148,4 +187,44 @@
 .stage__hint {
   color: var(--color-muted);
   font-size: var(--text-xs);
+}
+
+/* The caption and the "Previewing" line share one cell, so swapping them moves nothing. */
+.stage__notes {
+  display: grid;
+  min-width: 0;
+}
+
+.stage__notes > .stage__caption {
+  grid-area: 1 / 1;
+  transition: opacity var(--dur-micro) var(--ease-out);
+}
+
+.stage__notes[data-trial="true"] > .stage__caption:not(.stage__caption--trial),
+.stage__notes[data-trial="false"] > .stage__caption--trial {
+  opacity: 0;
+}
+
+.stage__caption--trial {
+  color: var(--color-ink-2);
+}
+
+.stage__caption--trial b {
+  color: var(--color-ink);
+  font-weight: var(--weight-medium);
+}
+
+/* A mouse clicks and a finger taps; each sees its own word. */
+.stage__tip [data-input="touch"] {
+  display: none;
+}
+
+@media (hover: none) {
+  .stage__tip [data-input="mouse"] {
+    display: none;
+  }
+
+  .stage__tip [data-input="touch"] {
+    display: inline;
+  }
 }
