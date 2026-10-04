@@ -28,12 +28,40 @@ const ANCHORS: Array<{ value: Anchor; label: string; Icon: typeof ArrowUpLeft }>
   { value: "br", label: "Bottom right", Icon: ArrowDownRight },
 ];
 
-export function Title() {
+export function Title({ onSelectWidget }: { onSelectWidget?: (id: string) => void }) {
   const { widget } = usePlayground();
   return (
     <div className="title">
-      <h1 id="page-title">{widget.name} for OBS</h1>
-      <p className="lede">{widget.tagline} One link into OBS. Free, no account.</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
+        <div>
+          <h1 id="page-title">{widget.name} for OBS</h1>
+          <p className="lede">{widget.tagline} One link into OBS. Free, no account.</p>
+        </div>
+        {onSelectWidget && (
+          <div className="seg seg--sm" role="radiogroup" aria-label="Select overlay type" style={{ margin: "0.25rem 0" }}>
+            <label className="seg__opt">
+              <input
+                type="radio"
+                name="widget-select"
+                value="valorant-rank"
+                checked={widget.id === "valorant-rank"}
+                onChange={() => onSelectWidget("valorant-rank")}
+              />
+              <span>Rank</span>
+            </label>
+            <label className="seg__opt">
+              <input
+                type="radio"
+                name="widget-select"
+                value="valorant-mastery"
+                checked={widget.id === "valorant-mastery"}
+                onChange={() => onSelectWidget("valorant-mastery")}
+              />
+              <span>Agent Mastery</span>
+            </label>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

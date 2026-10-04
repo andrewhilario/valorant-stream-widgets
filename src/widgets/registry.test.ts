@@ -47,3 +47,23 @@ describe("try a game", () => {
     expect(tryouts.blocked({ ...defaults, animate: false, reactions: false })?.focus).toBe("animate");
   });
 });
+
+describe("mastery widget registry", () => {
+  const masteryWidget = getWidget("valorant-mastery")!;
+
+  it("is registered with schema, defaults, and tryouts", () => {
+    expect(masteryWidget).toBeDefined();
+    expect(masteryWidget.name).toBe("Valorant Agent Mastery overlay");
+    expect(masteryWidget.tryouts?.label).toBe("Try a match");
+    expect(masteryWidget.tryouts?.options.map((o) => o.kind)).toEqual(["mp_gain", "level_up", "target_reached"]);
+  });
+
+  it("needs an agent name or id to be complete", () => {
+    expect(masteryWidget.needs({ agentName: "", agentId: "" })).toEqual({
+      message: "Choose an agent",
+      focus: "agentName",
+    });
+    expect(masteryWidget.needs({ agentName: "Jett", agentId: "" })).toBeNull();
+  });
+});
+

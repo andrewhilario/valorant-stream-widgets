@@ -1,6 +1,8 @@
 import { looksLikeKey } from "@/lib/henrik-client";
 import { guessRegion, parseRiotId } from "@/lib/riot";
 import type { Config, WidgetSchema } from "@/lib/schema";
+import * as valorantMastery from "./valorant-mastery/definition";
+import { MASTERY_REACTION_KINDS, MASTERY_REACTION_LABELS } from "./valorant-mastery/reactions";
 import * as valorantRank from "./valorant-rank/definition";
 import { REACTION_KINDS, REACTION_LABELS } from "./valorant-rank/reactions";
 
@@ -52,6 +54,27 @@ export const widgets: Record<string, WidgetMeta> = {
       },
     },
   },
+  [valorantMastery.WIDGET_ID]: {
+    id: valorantMastery.WIDGET_ID,
+    name: valorantMastery.WIDGET_NAME,
+    tagline: "Track Act Level, Mastery Points and match progress.",
+    schema: valorantMastery.schema,
+    defaults: valorantMastery.defaults,
+    firstRun: (defaults, env) => ({ ...defaults, region: guessRegion(env.timeZone) }),
+    needs: (config) => {
+      if (!config.agentName && !config.agentId) return { message: "Choose an agent", focus: "agentName" };
+      return null;
+    },
+    tryouts: {
+      label: "Try a match",
+      options: MASTERY_REACTION_KINDS.map((kind) => ({ kind, label: MASTERY_REACTION_LABELS[kind] })),
+      blocked: (config) => {
+        if (config.animate === false) return { message: "Animate changes is off", focus: "animate" };
+        if (config.reactions === false) return { message: "React to matches is off", focus: "reactions" };
+        return null;
+      },
+    },
+  },
 };
 
 export const defaultWidgetId = valorantRank.WIDGET_ID;
@@ -59,3 +82,4 @@ export const defaultWidgetId = valorantRank.WIDGET_ID;
 export function getWidget(id: string): WidgetMeta | undefined {
   return widgets[id];
 }
+

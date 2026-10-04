@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getWidget } from "@/widgets/registry";
 import { SiteHeader } from "../site/SiteHeader";
 import { StickyBar, UndoBar } from "./Bars";
@@ -18,7 +18,17 @@ function PaletteBridge({ state }: { state: PlaygroundState }) {
   return null;
 }
 
-function Editor({ widget, below, footer }: { widget: WidgetMeta; below: ReactNode; footer: ReactNode }) {
+function Editor({
+  widget,
+  below,
+  footer,
+  onSelectWidget,
+}: {
+  widget: WidgetMeta;
+  below: ReactNode;
+  footer: ReactNode;
+  onSelectWidget?: (id: string) => void;
+}) {
   const state = usePlaygroundState(widget);
 
   return (
@@ -28,7 +38,7 @@ function Editor({ widget, below, footer }: { widget: WidgetMeta; below: ReactNod
       <main id="main">
         <div className="workbench" id="workbench">
           <section className="stagecol" aria-labelledby="page-title">
-            <Title />
+            <Title onSelectWidget={onSelectWidget} />
             <StageToolbar />
             <Stage />
             <OutputBar />
@@ -50,7 +60,27 @@ function Editor({ widget, below, footer }: { widget: WidgetMeta; below: ReactNod
  * live settings (e.g. the OBS fields table) can read them.
  */
 export function Playground({ widgetId, below, footer }: { widgetId: string; below: ReactNode; footer: ReactNode }) {
-  const widget = getWidget(widgetId);
+  const [currentId, setCurrentId] = useState(widgetId);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const w = params.get("widget") ?? params.get("w");
+    if (w && getWidget(w)) setCurrentId(w);
+  }, []);
+
+  const handleSelect = (id: string) => {
+    setCurrentId(id);
+    const url = new URL(window.location.href);
+    if (id === widgetId) {
+      url.searchParams.delete("widget");
+      url.searchParams.delete("w");
+    } else {
+      url.searchParams.set("widget", id);
+    }
+    window.history.replaceState(null, "", url.toString());
+  };
+
+  const widget = getWidget(currentId) ?? getWidget(widgetId);
   if (!widget) throw new Error(`Unknown widget: ${widgetId}`);
-  return <Editor widget={widget} below={below} footer={footer} />;
+  return <Editor key={widget.id} widget={widget} below={below} footer={footer} onSelectWidget={handleSelect} />;
 }

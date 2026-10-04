@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   applicationName: site.name,
   robots: { index: true, follow: true },
+  verification: {
+    google: "haR8bjjkeOdupwUr1Z8hhpPS28yHYqjBj3GHhfBfh78",
+  },
 };
 
 export const viewport: Viewport = {

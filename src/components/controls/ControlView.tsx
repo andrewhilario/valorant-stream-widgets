@@ -7,6 +7,7 @@ import { FieldGroup } from "./Field";
 import { Gallery } from "./Gallery";
 import { Range } from "./Range";
 import { Segmented } from "./Segmented";
+import { SelectControl } from "./Select";
 import { Swatches } from "./Swatches";
 import { Switch } from "./Switch";
 import { TextField } from "./TextField";
@@ -76,11 +77,13 @@ export function ControlView(props: Props) {
         <TextField control={control} value={String(value ?? "")} onChange={(v) => onChange(control.key, v)} lookup={lookup} />
       );
     case "choice":
-      return control.display === "gallery" ? (
-        <Gallery control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} onTry={onTry} />
-      ) : (
-        <Segmented control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} />
-      );
+      if (control.display === "gallery") {
+        return <Gallery control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} onTry={onTry} />;
+      }
+      if (control.display === "select" || control.options.length > 5) {
+        return <SelectControl control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} />;
+      }
+      return <Segmented control={control} value={String(value)} onChange={(v) => onChange(control.key, v)} />;
     case "range":
       return <Range control={control} value={Number(value)} onChange={(v) => onChange(control.key, v)} />;
     case "toggle":

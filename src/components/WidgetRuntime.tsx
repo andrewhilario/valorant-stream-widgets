@@ -1,11 +1,14 @@
 "use client";
 
 import type { ComponentType } from "react";
+import { WIDGET_ID as MASTERY_WIDGET_ID } from "@/widgets/valorant-mastery/definition";
+import { MasteryRuntime } from "@/widgets/valorant-mastery/Runtime";
 import { WIDGET_ID } from "@/widgets/valorant-rank/definition";
 import { RankRuntime } from "@/widgets/valorant-rank/Runtime";
 
 const runtimes: Record<string, ComponentType> = {
   [WIDGET_ID]: RankRuntime,
+  [MASTERY_WIDGET_ID]: MasteryRuntime,
 };
 
 /** The page OBS loads for /w/<widget>. */

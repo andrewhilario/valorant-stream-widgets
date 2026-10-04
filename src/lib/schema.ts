@@ -56,10 +56,9 @@ export type ChoiceControl = Base & {
   options: ChoiceOption[];
   default: string;
   /**
-   * Draw the options as cards (each with its swatch) instead of a segmented bar. Hovering a card previews it in the
-   * stage without choosing it.
+   * Draw the options as cards (gallery) or a native select dropdown instead of a segmented bar.
    */
-  display?: "gallery";
+  display?: "gallery" | "select";
   /** Extra keys to set when an option is chosen — lets a preset apply a bundle. */
   onSelect?: (value: string) => Config;
 };
