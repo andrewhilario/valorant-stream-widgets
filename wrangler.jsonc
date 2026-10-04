@@ -3,7 +3,9 @@
   "name": "valorant-stream-widgets",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -16,5 +18,8 @@
   ],
   "observability": {
     "enabled": true
-  }
+  },
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live"
+  },
 }
