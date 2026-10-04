@@ -10,6 +10,16 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "valwidgets.live",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.valwidgets.live",
+      "custom_domain": true
+    }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
@@ -21,5 +31,5 @@
   },
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live"
-  },
+  }
 }
