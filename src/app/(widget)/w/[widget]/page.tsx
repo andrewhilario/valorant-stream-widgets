@@ -4,7 +4,6 @@ import { getWidget, widgets } from "@/widgets/registry";
 
 // One static shell per widget: served from the CDN, no function call per OBS refresh.
 // Settings come from the link's query string, read in the browser.
-export const dynamicParams = false;
 
 export function generateStaticParams() {
   return Object.keys(widgets).map((widget) => ({ widget }));
