@@ -26,7 +26,7 @@ Settings go in `.env.local` (copy `.env.example`). Nothing is needed to run loca
 
 | Variable | What it does |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | **Set this before deploying.** The public address, e.g. `https://tally.example` (the `https://` is added if you leave it off, and `http://` for localhost, so `localhost:3000` works too). Canonical links, the sitemap, structured data and social cards are built from it. Unset, they point at `localhost` and the build warns. On Vercel the production URL is used automatically. |
+| `NEXT_PUBLIC_SITE_URL` | **Set this before deploying.** The public address, e.g. `https://tally.example` (the `https://` is added if you leave it off, and `http://` for localhost, so `localhost:3000` works too). Canonical links, the sitemap, structured data and social cards are built from it. Unset, the build uses `vars.NEXT_PUBLIC_SITE_URL` from [`wrangler.jsonc`](wrangler.jsonc) (Cloudflare's build doesn't see the Worker's `vars`, so without that fallback every canonical link and the sitemap would say `localhost`); with neither, they point at `localhost` and the build warns, and a build on a build server (`CI` set) refuses to finish. |
 | `NEXT_PUBLIC_BMC_URL` | Your Buy Me a Coffee page. Defaults to `https://buymeacoffee.com/ainzzuu`. |
 | `NEXT_PUBLIC_BMC_WIDGET` | `off` removes Buy Me a Coffee's floating button (the plain links stay) and its hosts from the security policy. |
 | `NEXT_PUBLIC_PRO_INTEREST_URL` | The address (https only) of a short form that asks what people would pay for. While it is set, the editor and footer show a quiet "Pro (coming soon)" link to it and each click is counted. Unset, there is no link. Read at build time, so on Cloudflare it goes in the build variables with `NEXT_PUBLIC_SITE_URL`. |

@@ -1,8 +1,25 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER, PHASE_PRODUCTION_BUILD } from "next/constants";
 
 // Mirrors bmc.widget.enabled in src/config/site.ts. (The config can't import from src.)
 const bmcWidget = process.env.NEXT_PUBLIC_BMC_WIDGET?.trim().toLowerCase() !== "off";
+
+// Cloudflare's build sees its own build variables but not the Worker's `vars`, and a build without NEXT_PUBLIC_SITE_URL bakes
+// http://localhost:3000 into every canonical link, social card address and the sitemap. That went unnoticed while the Worker drew
+// the pages on each request (where `vars` is visible) and showed at once when it started serving what the build made. The public
+// address is already written down in wrangler.jsonc, so the build uses it when the variable isn't set.
+function siteUrlFromWrangler(): string | undefined {
+  try {
+    const text = readFileSync(join(process.cwd(), "wrangler.jsonc"), "utf8").replace(/^\s*\/\/.*$/gm, "");
+    const value = (JSON.parse(text) as { vars?: { NEXT_PUBLIC_SITE_URL?: unknown } }).vars?.NEXT_PUBLIC_SITE_URL;
+    return typeof value === "string" && value.trim() ? value.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || siteUrlFromWrangler();
 
 const policy = (directives: Record<string, string[]>) =>
   Object.entries(directives)
@@ -63,7 +80,7 @@ export default (phase: string): NextConfig => {
   // The config is loaded by several processes during a build; the flag keeps the warning to one.
   if (
     phase === PHASE_PRODUCTION_BUILD &&
-    !process.env.NEXT_PUBLIC_SITE_URL &&
+    !siteUrl &&
     !process.env.VERCEL_PROJECT_PRODUCTION_URL &&
     !process.env.TALLY_SITE_URL_WARNED
   ) {
@@ -76,7 +93,7 @@ export default (phase: string): NextConfig => {
 
   // A scheme-less value such as "localhost:3000" is fine (the site adds it). One that isn't an address at all falls back to
   // localhost, which is worth saying out loud, in development and in a build.
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const configured = siteUrl;
   if (configured && !process.env.TALLY_SITE_URL_BAD_WARNED && !URL.canParse(/^[a-z][a-z0-9+.-]*:\/\//i.test(configured) ? configured : `https://${configured}`)) {
     process.env.TALLY_SITE_URL_BAD_WARNED = "1";
     console.warn(
@@ -88,6 +105,8 @@ export default (phase: string): NextConfig => {
   return {
     reactStrictMode: true,
     poweredByHeader: false,
+    // Baked into the pages at build time, from the variable or, failing that, from wrangler.jsonc (see above).
+    env: siteUrl ? { NEXT_PUBLIC_SITE_URL: siteUrl } : {},
     async headers() {
       return [
         {

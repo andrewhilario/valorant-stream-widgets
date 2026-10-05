@@ -98,6 +98,12 @@ describe("the Cloudflare configuration", () => {
     }
   });
 
+  // next.config.ts falls back to this when the build has no NEXT_PUBLIC_SITE_URL (Cloudflare's build doesn't see the Worker's vars).
+  it("holds the public address the build falls back to, as a working https address", () => {
+    const vars = (JSON.parse(config.replace(/^\s*\/\/.*$/gm, "")) as { vars?: { NEXT_PUBLIC_SITE_URL?: string } }).vars;
+    expect(vars?.NEXT_PUBLIC_SITE_URL).toMatch(/^https:\/\/[a-z0-9.-]+$/);
+  });
+
   it("keeps the line that turns counting on, ready to paste back", () => {
     expect(config).toContain(`"analytics_engine_datasets": [{ "binding": "${BINDING}", "dataset": "${DATASET}" }]`);
   });
