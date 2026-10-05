@@ -1,6 +1,6 @@
 // One place for the product's name and outbound links.
 
-import { resolveSiteAddress } from "@/lib/site-url";
+import { resolveSiteAddress, secureUrl } from "@/lib/site-url";
 
 const address = resolveSiteAddress(process.env.NEXT_PUBLIC_SITE_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL);
 
@@ -16,6 +16,20 @@ export const site = {
    * falls back to localhost instead of crashing the pages; see lib/site-url.ts.
    */
   url: address.url,
+} as const;
+
+/**
+ * Riot's required wording for a product that uses Valorant data, from its Developer Portal policy:
+ * "[Your product] isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games."
+ */
+export const riotDisclaimer = `${site.name} isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games.`;
+
+/**
+ * Pro is only an idea for now. While NEXT_PUBLIC_PRO_INTEREST_URL is set (to an https form that asks what people would
+ * pay for), the site shows a quiet "Pro (coming soon)" link to it and counts the clicks. Unset, there is no link.
+ */
+export const pro = {
+  interestUrl: secureUrl(process.env.NEXT_PUBLIC_PRO_INTEREST_URL),
 } as const;
 
 /** Buy Me a Coffee. The page link, plus the floating widget's settings. */

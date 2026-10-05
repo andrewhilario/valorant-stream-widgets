@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { track, trackOnce } from "@/lib/analytics";
 import { isFormat, type Format } from "@/lib/canvas";
 import { copyText } from "@/lib/clipboard";
 import type { ConfigMessage, PreviewStatus, ReactMessage, WidgetMessage } from "@/lib/preview";
@@ -84,6 +85,21 @@ export function usePlaygroundState(widget: WidgetMeta) {
 
   const needs = widget.needs(config);
   const configured = needs === null;
+
+  // Count a setup that gets finished while the editor is open, not one that was already saved from an earlier visit. The first
+  // render after loading says which of the two this is; only an unfinished start can become a finished setup.
+  const startedConfigured = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!ready) return;
+    if (startedConfigured.current === null) {
+      startedConfigured.current = configured;
+      return;
+    }
+    if (configured && !startedConfigured.current) {
+      startedConfigured.current = true;
+      trackOnce("setup_ready", widget.id);
+    }
+  }, [ready, configured, widget.id]);
 
   // ── Load: link → saved settings → first-run defaults ─────────────────────
   useEffect(() => {
@@ -232,6 +248,7 @@ export function usePlaygroundState(widget: WidgetMeta) {
     manualSample.current = true;
     setSampleState(true);
     setPlay((prev) => ({ kind, n: prev.n + 1 }));
+    track("try_game", kind);
   }, []);
 
   // ── Settings ─────────────────────────────────────────────────────────────
@@ -240,6 +257,11 @@ export function usePlaygroundState(widget: WidgetMeta) {
       const control = controls.find((c) => c.key === key);
       if (!control) return;
       const clean = sanitizeValue(control, value);
+      // Only the picking of a theme or a layout is counted, and only by the name it has in events.ts; no value anyone typed.
+      if (control.kind === "choice" && configRef.current[key] !== clean) {
+        if (key === "preset") track("theme_picked", String(clean));
+        else if (key === "layout") track("layout_picked", String(clean));
+      }
       setConfig((prev) => (control.kind === "choice" ? applyChoice(control, prev, String(clean)) : { ...prev, [key]: clean }));
     },
     [controls],
@@ -285,9 +307,10 @@ export function usePlaygroundState(widget: WidgetMeta) {
     if (!url) return;
     const ok = await copyText(url);
     setCopied(ok ? "copied" : "failed");
+    if (ok) track("link_copied", widget.id);
     clearTimeout(copyTimer.current);
     copyTimer.current = setTimeout(() => setCopied("idle"), ok ? 2500 : 5000);
-  }, [url]);
+  }, [url, widget.id]);
 
   // ── Navigation helpers (used by the command palette) ─────────────────────
   // A focus request is state, applied by an effect once React has rendered the target tab

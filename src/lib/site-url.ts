@@ -27,6 +27,18 @@ function parse(value: string): string | null {
   }
 }
 
+/** An https address from an environment variable, or "" if it is unset or isn't one (a link that opens a form must not be able to be `javascript:`). */
+export function secureUrl(value: string | undefined): string {
+  const raw = value?.trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" && url.hostname ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
 /**
  * `configured` is NEXT_PUBLIC_SITE_URL. `vercelHost` is VERCEL_PROJECT_PRODUCTION_URL, a bare host name that Vercel sets
  * on its own, used only when nothing was configured.

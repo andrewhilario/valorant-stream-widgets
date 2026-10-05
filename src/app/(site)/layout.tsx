@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import { BmcWidget } from "@/components/site/BmcWidget";
 import { CommandPalette } from "@/components/site/CommandPalette";
 import { PaletteProvider } from "@/components/site/PaletteProvider";
+import { Visit } from "@/components/site/Visit";
 import { site } from "@/config/site";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <CommandPalette />
         </PaletteProvider>
         <BmcWidget />
+        <Visit />
       </body>
     </html>
   );

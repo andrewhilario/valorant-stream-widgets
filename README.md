@@ -1,6 +1,6 @@
 # Tally
 
-Free tools for Valorant streamers, on one static Next.js site. No account, no backend, no secrets on the server.
+Free tools for Valorant streamers, on one mostly static Next.js site. No account and no secrets on the server; the only server code is a tiny anonymous counter (see [What is counted](#what-is-counted)).
 
 | Page | What it is |
 | --- | --- |
@@ -29,10 +29,11 @@ Settings go in `.env.local` (copy `.env.example`). Nothing is needed to run loca
 | `NEXT_PUBLIC_SITE_URL` | **Set this before deploying.** The public address, e.g. `https://tally.example` (the `https://` is added if you leave it off, and `http://` for localhost, so `localhost:3000` works too). Canonical links, the sitemap, structured data and social cards are built from it. Unset, they point at `localhost` and the build warns. On Vercel the production URL is used automatically. |
 | `NEXT_PUBLIC_BMC_URL` | Your Buy Me a Coffee page. Defaults to `https://buymeacoffee.com/ainzzuu`. |
 | `NEXT_PUBLIC_BMC_WIDGET` | `off` removes Buy Me a Coffee's floating button (the plain links stay) and its hosts from the security policy. |
+| `NEXT_PUBLIC_PRO_INTEREST_URL` | The address (https only) of a short form that asks what people would pay for. While it is set, the editor and footer show a quiet "Pro (coming soon)" link to it and each click is counted. Unset, there is no link. Read at build time, so on Cloudflare it goes in the build variables with `NEXT_PUBLIC_SITE_URL`. |
 
 ## How it works
 
-It's a static site. Every page is prerendered; there are no API routes.
+Every page is prerendered, and the widget page OBS loads is a static shell served from the CDN. The one server route is `POST /api/e`, an anonymous event counter (see [What is counted](#what-is-counted)); it never sees a key.
 
 - **`/`** is the editor. Every control comes from a schema, so the inspector, the ⌘K palette, validation and the link format stay in step.
 - **`/w/valorant-rank?…#k=…`** is the page OBS loads. It reads its settings from the link and polls HenrikDev itself. The editor's preview is this same page in an iframe, so what you see is what OBS renders.
@@ -47,7 +48,7 @@ A shared key would cap how many streamers could be live at once, because each ke
 - The link field shows the key masked. Copying it, by button or by hand, always gives the full link.
 - One overlay lookup costs two requests (rank + history); the default refresh is 60 s. The calculators' "Use my recent ranked games" costs three, once per click.
 
-**Don't add analytics that record full URLs or `location.hash`.** That would put keys in your logs.
+**Don't add analytics that record full URLs or `location.hash`.** That would put keys in your logs. The site's own counter follows this: it sends event names from a fixed list and nothing from the address.
 
 ### Sessions need no reset
 
@@ -107,15 +108,54 @@ When Riot changes the rules, edit [`src/lib/mastery.ts`](src/lib/mastery.ts) (it
 
 Iron 1 to Ascendant 3 climb in fixed 100 RR steps, so the gap is `(target − current) × 100 − RR`; games are the gap divided by `win rate × RR per win − (1 − win rate) × RR per loss`. The likely range (shown as "8 in 10 runs") treats RR as a random walk and uses an inverse-Gaussian first-passage approximation, checked against a seeded simulation in [`rank-calc.test.ts`](src/lib/rank-calc.test.ts). It stops at Immortal 1 (RR has no 100-point ceiling above that) and ignores demotion shields.
 
+## Deploying to Cloudflare
+
+The site runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare) ([`wrangler.jsonc`](wrangler.jsonc), [`open-next.config.ts`](open-next.config.ts)).
+
+- **Build command: `npm run build`.** It builds the site, then fills the Worker's cache with the prerendered pages, the manifest and the social card images (`opennextjs-cloudflare populateCache local`). **Deploy command: `npx wrangler deploy`** (or `npm run deploy` from a terminal).
+- **Why that cache matters.** [`open-next.config.ts`](open-next.config.ts) serves prerendered routes from the Worker's static assets. Without it the Worker draws the manifest, the social cards and the home-screen icon on every request, tries to read `tokens.css` and a font from a disk it doesn't have, and answers **500**, so shared links lose their image. After a deploy, `curl.exe -I https://<your domain>/manifest.webmanifest` should say 200.
+- **Build variables** (Cloudflare, Settings, Build): `NEXT_PUBLIC_SITE_URL`, and optionally `NEXT_PUBLIC_PRO_INTEREST_URL`. They are read at build time.
+- **Dashboard settings worth checking.** SSL/TLS, Edge Certificates, *Always Use HTTPS*, so `http://` redirects. A redirect rule from `www` to the bare domain. Analytics, Web Analytics, automatic setup *off*: its script is blocked by this site's Content-Security-Policy and logs a console error on every page. And Cloudflare's managed `robots.txt` and AI Crawl Control, which block AI crawlers by default and act at the edge, so they override this site's own policy: allow the search and assistant crawlers there (PerplexityBot, ChatGPT-User, Claude-User, Perplexity-User), and turn off "Set your preference to block training in robots.txt". The site's own `robots.txt` only turns away the training crawlers listed in [`src/config/crawlers.ts`](src/config/crawlers.ts).
+
 ## SEO
 
-Every page has its own title (50–60 characters) and description (150–160), a canonical link, Open Graph and Twitter tags, a generated 1200 × 630 social card, JSON-LD (`WebApplication`, `FAQPage`, and `BreadcrumbList` on tool pages), one `h1`, breadcrumbs and descriptive internal links. `/sitemap.xml`, `/robots.txt` and the web manifest are generated. The widget pages under `/w/` are `noindex` and disallowed. AI crawlers are not blocked.
+Every page has its own title (50–60 characters) and description (150–160), a canonical link, Open Graph and Twitter tags, a generated 1200 × 630 social card, JSON-LD (`WebApplication`, `FAQPage`, and `BreadcrumbList` on tool pages), one `h1`, breadcrumbs and descriptive internal links. `/sitemap.xml`, `/robots.txt` and the web manifest are generated. The widget pages under `/w/` are `noindex` and disallowed. Search engines and AI assistants are not blocked; only the training crawlers in [`src/config/crawlers.ts`](src/config/crawlers.ts) are asked to stay out (blocking them doesn't remove the site from AI answers), and `check:seo` fails if a search or assistant crawler ever gets blocked.
 
 - All of it is driven by one list, [`src/config/pages.ts`](src/config/pages.ts). **To add a page**, add an entry there, create the route with `pageMetadata(page)` and a `ToolPage` (see the existing two), and add an `opengraph-image.tsx`. The nav, footer, sitemap and related-tools links follow.
 - `npm run build && npm run check:seo` audits the prerendered HTML: lengths, uniqueness, canonicals, social tags, JSON-LD (including that every FAQ answer is visible on the page), heading order, links, the sitemap and robots rules. `src/lib/seo.test.ts` holds the copy to the same length rules at test time.
 - After deploying: submit `/sitemap.xml` in Google Search Console and Bing Webmaster Tools.
 - Measured with Lighthouse on the production build (mobile profile, median of three runs, on a busy laptop): SEO 100, Accessibility 100, Best Practices 100, Performance 95 on the rank calculator and 93 on the Mastery calculator, layout shift 0. Performance moves by several points between runs on the same code, and field data will differ.
 - Social card colours and the apple icon are read from `tokens.css` at build time, so they follow the site's palette. They use Space Grotesk from `@fontsource/space-grotesk` (a dev dependency, used only at build).
+
+## What is counted
+
+To see what people use before deciding what a paid tier should be, the site counts a few things, anonymously. [`src/lib/events.ts`](src/lib/events.ts) is the whole vocabulary: nine events, each with one or two labels from a fixed list (a page, a widget, a theme, a layout, a referrer group such as `reddit` or `tiktok`). There is no free text, so a count can't carry a Riot ID, region, key or address, and `events.test.ts` checks the lists against the real pages, widgets, themes and layouts.
+
+| Event | When |
+| --- | --- |
+| `visit` | Once per browser tab session: the page it started on, and where it came from in coarse groups. |
+| `overlay_load` | An overlay page opens as a page of its own (OBS, TikTok LIVE Studio, a browser tab), not as the editor's preview. Whether it ran on sample data. |
+| `setup_ready` | An unfinished setup became a working one while the editor was open. |
+| `key_help` | The "How to get a free key" steps were opened, or the dashboard link was followed. |
+| `link_copied`, `theme_picked`, `layout_picked`, `try_game` | What they say. |
+| `pro_click` | The "Pro (coming soon)" link, and where it was (footer or editor). |
+
+- **No cookie, no ID, no IP address, no log.** The browser sends `{"e":"visit","a":"overlay","b":"reddit"}` to `POST /api/e` ([`route.ts`](src/app/api/e/route.ts), [`event-endpoint.ts`](src/lib/event-endpoint.ts)), which adds one to a Workers Analytics Engine dataset (`tally_events`, bound as `EVENTS` in [`wrangler.jsonc`](wrangler.jsonc); the first write creates it). Cloudflare keeps those counts for three months.
+- **Do Not Track and Global Privacy Control are honoured:** nothing is sent. Only the site's own pages may post (the `Origin` must match), and anything outside the lists is refused.
+- **The OBS page sends exactly one count when it opens**, with no part of its link. That is the only thing it sends to this site. There are no analytics scripts anywhere, so the Content-Security-Policy didn't change.
+- **Without the binding** (local development, a fork) the endpoint checks the event and drops it.
+
+Reading the counts: `npm run stats` prints a report: visits, how many finish a setup and copy their link, overlay opens, what is picked, Pro clicks, and a week-by-week table. It needs your Cloudflare account ID and an API token with one permission, **Account > Account Analytics > Read** (My Profile, API Tokens, Create Token), as `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. `npm run stats -- --json` prints the raw rows.
+
+After deploying, check that it is wired up (this adds one test count; on Windows use `curl.exe`, because `curl` there is PowerShell's own command):
+
+```bash
+curl -i -X POST https://valwidgets.live/api/e -H "Origin: https://valwidgets.live" -d '{"e":"visit","a":"other","b":"direct"}'
+```
+
+`204` with `x-counted: yes` means counts are being stored. `x-counted: no` means events are accepted but dropped, so the `EVENTS` binding in `wrangler.jsonc` didn't deploy. `403` means the `Origin` didn't match the host you called.
+
+The FAQ answer "Do you track what I do?" says the same in plain words, and `faq.test.ts` ties it to the code. If you change what is counted, change both.
 
 ## Security
 
@@ -126,6 +166,8 @@ The pages are static, so scripts can't carry a nonce and the policy has to allow
 **Buy Me a Coffee's floating button is third-party JavaScript on pages that hold a streamer's key in `localStorage`.** It loads after the page is idle, is never on the widget pages OBS loads, and sets a `visited` cookie for a day. The policy above limits where it could send anything, but it is still code you don't control. If that isn't acceptable, set `NEXT_PUBLIC_BMC_WIDGET=off`: the button goes, the plain Buy Me a Coffee links stay, and its hosts leave the policy. If Buy Me a Coffee changes the hosts it uses, the button will quietly stop working until `next.config.ts` is updated. The policy was tested against the live widget (script, button, and its panel), the editor preview and the widget page.
 
 A key is also visible to anyone with the OBS link, so treat the link like a password. If it leaks, create a new key in the HenrikDev dashboard.
+
+The only server code is the event counter above. It accepts only `POST`s from the site's own origin, only the listed events, and nothing in them comes from the link, so it never sees a key.
 
 ## Adding a widget
 
@@ -152,6 +194,7 @@ tokens.css                  design tokens (the only place site colours live)
 src/config/                 site.ts (name, URL, Buy Me a Coffee), pages.ts (every page, once)
 src/app/(site)/             the editor, the calculator pages, and their root layout
 src/app/(widget)/w/[widget] the page OBS loads + its own root layout and fonts
+src/app/api/e/              the anonymous event counter (the only server route)
 src/components/playground/  editor: stage, inspector, palette, output bar, state
 src/components/calc/        the calculators: fields, result pieces, account panel, lookups
 src/components/site/        header, footer, breadcrumbs, palette, the Buy Me a Coffee button
@@ -159,11 +202,13 @@ src/components/controls/    schema-driven form controls (the calculators reuse t
 src/content/faq.ts          FAQ copy as data: the visible answers and the FAQPage data are the same words
 src/lib/                    schema codec, session maths, rank and mastery maths, tilt maths, HenrikDev client + normalisers
 src/widgets/valorant-rank/  definition, renderer, runtime, themes, reactions, styles
-scripts/                    check-api.mjs (a real key), check-seo.mjs (the built pages)
+scripts/                    check-api.mjs (a real key), check-seo.mjs (the built pages), stats.mjs (the counts)
 ```
 
 The design system is documented in the stamp at the top of [`globals.css`](src/app/(site)/globals.css) and recorded in `.hallmark/log.json`.
 
 ## Not affiliated with Riot Games
 
-Valorant and Riot Games are trademarks of Riot Games, Inc. Rank data comes from the unofficial HenrikDev API; badge art and agent data from valorant-api.com; Mastery rules from Riot's own pages.
+Tally isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games. That is Riot's required wording; it lives in `riotDisclaimer` in [`src/config/site.ts`](src/config/site.ts) and shows in the footer and the FAQ. Valorant and Riot Games are trademarks of Riot Games, Inc. Rank data comes from the unofficial HenrikDev API; badge art and agent data from valorant-api.com; Mastery rules from Riot's own pages.
+
+**Before charging for anything,** read Riot's [developer policies](https://developer.riotgames.com/policies/general) and its [VALORANT API page](https://developer.riotgames.com/docs/valorant). As of 2026-10-04 they say a product that serves players must be registered on the Developer Portal even when it uses unofficial APIs, and that charging is allowed only for registered products that keep a free tier. HenrikDev's README asks projects with a paid tier to support its Patreon. Tally isn't registered yet (change this line when it is).

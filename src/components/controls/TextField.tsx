@@ -2,6 +2,7 @@
 
 import { Check, CircleAlert, ExternalLink, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useId, useState } from "react";
+import { track } from "@/lib/analytics";
 import type { PreviewStatus } from "@/lib/preview";
 import type { TextControl } from "@/lib/schema";
 import { Field } from "./Field";
@@ -62,6 +63,9 @@ export function TextField({
 
   const secret = Boolean(control.secret);
   const learn = control.learnMore;
+  // Whether the steps for getting a key get opened, and whether people go on to the dashboard, is how we learn how much the key
+  // step costs. The only such field is the key (it's the secret one); nothing typed into it is ever counted.
+  const countKeyHelp = secret;
 
   return (
     <Field
@@ -72,7 +76,12 @@ export function TextField({
       htmlFor={id}
       after={
         learn && (
-          <details className="advanced advanced--inline">
+          <details
+            className="advanced advanced--inline"
+            onToggle={(event) => {
+              if (countKeyHelp && event.currentTarget.open) track("key_help", "steps");
+            }}
+          >
             <summary>{learn.summary}</summary>
             <div className="howto">
               <ol className="howto__steps">
@@ -80,7 +89,15 @@ export function TextField({
                   <li key={step}>{step}</li>
                 ))}
               </ol>
-              <a className="textlink" href={learn.href} target="_blank" rel="noopener noreferrer">
+              <a
+                className="textlink"
+                href={learn.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  if (countKeyHelp) track("key_help", "dashboard");
+                }}
+              >
                 <span>{learn.hrefLabel}</span>
                 <ExternalLink aria-hidden="true" />
               </a>

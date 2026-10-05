@@ -8,6 +8,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { ASSISTANT_CRAWLERS, TRAINING_CRAWLERS } from "../src/config/crawlers.ts";
 
 const APP = join(process.cwd(), ".next", "server", "app");
 
@@ -74,8 +75,26 @@ if (SITE && /^(localhost|127\.0\.0\.1|\[::1\]|.*\.localhost|.*\.test)$/i.test(ne
 const robots = read("robots.txt.body") ?? "";
 check(/^Disallow:\s*\/w\/\s*$/m.test(robots), "robots.txt", "doesn't keep /w/ (the OBS widget pages) out");
 check(new RegExp(`^Sitemap:\\s*${SITE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/sitemap\\.xml\\s*$`, "m").test(robots), "robots.txt", "doesn't point at the sitemap");
-check(!/^Disallow:\s*\/\s*$/m.test(robots), "robots.txt", "blocks the whole site");
-check(!/GPTBot|ClaudeBot|PerplexityBot|OAI-SearchBot|Google-Extended|CCBot/i.test(robots), "robots.txt", "blocks an AI crawler; decide that per bot, not by default");
+
+// Which crawlers each group of rules is for, and whether it turns them away from the whole site ("Disallow: /").
+const groups = [];
+for (const raw of robots.split(/\r?\n/)) {
+  const m = /^([A-Za-z-]+):\s*(.*?)\s*$/.exec(raw.replace(/#.*/, "").trim());
+  if (!m) continue;
+  const key = m[1].toLowerCase();
+  if (key === "user-agent") {
+    const last = groups.at(-1);
+    if (last && last.rules.length === 0) last.agents.push(m[2].toLowerCase());
+    else groups.push({ agents: [m[2].toLowerCase()], rules: [] });
+  } else if ((key === "allow" || key === "disallow") && groups.length) groups.at(-1).rules.push([key, m[2]]);
+}
+const turnedAway = (agent) =>
+  groups.some((g) => g.agents.includes(agent.toLowerCase()) && g.rules.some(([key, value]) => key === "disallow" && value === "/"));
+check(!turnedAway("*"), "robots.txt", "blocks the whole site");
+// The policy (src/config/crawlers.ts): search engines and AI assistants may read the site; training crawlers are asked not to.
+for (const bot of ASSISTANT_CRAWLERS) check(!turnedAway(bot), "robots.txt", `turns away ${bot}, which search and AI assistants use to find and read the site`);
+for (const bot of TRAINING_CRAWLERS) check(turnedAway(bot), "robots.txt", `no longer asks ${bot}, a training crawler, to stay out (src/config/crawlers.ts)`);
+check(/^Disallow:\s*\/api\/\s*$/m.test(robots), "robots.txt", "doesn't keep /api/ (the event counter) out");
 
 // ── Each page ────────────────────────────────────────────────────────────────
 

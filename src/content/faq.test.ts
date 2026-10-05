@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { riotDisclaimer } from "@/config/site";
+import { optedOut } from "@/lib/analytics";
+import { EVENTS } from "@/lib/events";
 import { cumulativeMp, matchesNeeded } from "@/lib/mastery";
 import { GAME_MODES, lengthLabel, typicalMinutes } from "@/lib/modes";
 import { controlsOf } from "@/lib/schema";
@@ -100,5 +103,25 @@ describe("the rank FAQ and game modes", () => {
     expect(modes).toMatch(/Only Competitive games change your RR/);
     expect(modes).toMatch(/Unrated, Swiftplay, Spike Rush and Team Deathmatch/);
     expect(modes).toMatch(/Agent Mastery calculator/);
+  });
+});
+
+describe("what the FAQ says about Riot and about counting", () => {
+  it("carries Riot's required wording, word for word, and says it is not official", () => {
+    expect(riotDisclaimer).toBe("Tally isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games.");
+    const official = answer(overlayFaq, /Is this official/);
+    expect(official).toContain(riotDisclaimer);
+    expect(official).toMatch(/^No./);
+  });
+
+  it("promises only what the code does: anonymous counts, nothing from the link, and nothing when Do Not Track is on", () => {
+    const tracking = answer(overlayFaq, /track what I do/);
+    expect(tracking).toMatch(/anonymous counts/);
+    expect(tracking).toMatch(/Riot ID, region and key are never part of one/);
+    expect(tracking).toMatch(/Do Not Track or Global Privacy Control, nothing is counted/);
+    expect(optedOut({ doNotTrack: "1" })).toBe(true);
+    expect(optedOut({ globalPrivacyControl: true })).toBe(true);
+    // The two examples it gives are real events.
+    expect(Object.keys(EVENTS)).toEqual(expect.arrayContaining(["link_copied", "theme_picked"]));
   });
 });

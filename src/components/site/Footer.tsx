@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { pageList } from "@/config/pages";
-import { site } from "@/config/site";
+import { pro, riotDisclaimer, site } from "@/config/site";
 import { SupportLink } from "../sections/SupportLink";
+import { ProLink } from "./ProLink";
 
 function Sep() {
   return (
@@ -29,10 +30,18 @@ export function Footer() {
         ))}
         <Sep />
         <SupportLink variant="link" />
-        <Sep />
-        <span>Not affiliated with Riot Games</span>
+        {pro.interestUrl && (
+          <>
+            <Sep />
+            <ProLink variant="link" where="footer" />
+          </>
+        )}
         <Sep />
         <span>© {new Date().getFullYear()}</span>
+      </p>
+      {/* Riot's required wording, then the trademark line. See config/site.ts. */}
+      <p className="foot__legal">
+        {riotDisclaimer} Valorant and Riot Games are trademarks of Riot Games, Inc.
       </p>
     </footer>
   );

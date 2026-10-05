@@ -4,6 +4,7 @@ import { Check, Lock } from "lucide-react";
 import { useRef, useState } from "react";
 import { copyText } from "@/lib/clipboard";
 import { SupportLink } from "../sections/SupportLink";
+import { ProLink } from "../site/ProLink";
 import { CopyButton } from "./CopyButton";
 import { usePlayground } from "./usePlayground";
 
@@ -92,6 +93,7 @@ export function OutputBar() {
               <span>Keep this link private. It holds your key.</span>
             </p>
             <SupportLink variant="chip" />
+            <ProLink variant="chip" where="editor" />
           </div>
         )}
       </div>

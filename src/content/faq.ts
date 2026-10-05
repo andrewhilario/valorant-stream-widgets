@@ -1,6 +1,7 @@
 // FAQ copy as data, so the visible accordion and the FAQPage structured data are always the same words.
 // Where an answer quotes a figure, the figure is worked out with the same functions the calculators use.
 
+import { riotDisclaimer } from "@/config/site";
 import { hoursText, list } from "@/lib/format";
 import { cumulativeMp, matchesNeeded } from "@/lib/mastery";
 import { GAME_MODES, lengthLabel, modeById, typicalMinutes } from "@/lib/modes";
@@ -33,6 +34,13 @@ export const overlayFaq: FaqItem[] = [
       "The key is saved in this browser and added to your OBS link after a #. Browsers never send that part of a link to a server, so it goes from OBS straight to HenrikDev and never through this site.",
       "Treat the link like a password: don’t post it in chat or show it on stream. If it leaks, create a new key in the HenrikDev dashboard and copy a fresh link.",
       "The only third-party script on this site is the Buy Me a Coffee button. The widget page that OBS loads has none.",
+    ],
+  },
+  {
+    q: "Do you track what I do?",
+    paragraphs: [
+      "Only anonymous counts, to see which parts get used. Each one is a name from a fixed list, like “link copied” or “theme picked”, with no cookie, ID, address or account attached. Your Riot ID, region and key are never part of one, and nothing is read from the part of a link after the #.",
+      "The widget page that OBS loads sends one count when it opens, saying only that an overlay was opened. If your browser sends Do Not Track or Global Privacy Control, nothing is counted at all. The counts go to this site’s own address, and there are no advertising or analytics scripts. Like any host, Cloudflare sees ordinary requests to the site; the counts add nothing to that.",
     ],
   },
   {
@@ -82,7 +90,7 @@ export const overlayFaq: FaqItem[] = [
   {
     q: "Is this official?",
     paragraphs: [
-      "No. It isn’t affiliated with or endorsed by Riot Games. Valorant and Riot Games are trademarks of Riot Games, Inc. Rank data comes from the unofficial HenrikDev API and badge art from valorant-api.com.",
+      `No. ${riotDisclaimer} Valorant and Riot Games are trademarks of Riot Games, Inc. Rank data comes from the unofficial HenrikDev API and badge art from valorant-api.com.`,
     ],
   },
 ];

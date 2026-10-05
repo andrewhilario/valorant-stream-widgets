@@ -192,6 +192,13 @@
   color: var(--color-neutral);
 }
 
+.foot__legal {
+  max-width: 62ch;
+  margin-top: var(--space-xs);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
 /* On phones the row wraps, and a "·" stranded at the start or end of a line looks like a mistake, so the
    items are simply spaced out. The floating Buy Me a Coffee button sits above the phone bar, so the last
    line needs room to clear it. */

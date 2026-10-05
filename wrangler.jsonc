@@ -29,6 +29,13 @@
   "observability": {
     "enabled": true
   },
+  // Anonymous event counts (src/lib/events.ts). The dataset is created by the first write; nothing to set up by hand.
+  "analytics_engine_datasets": [
+    {
+      "binding": "EVENTS",
+      "dataset": "tally_events"
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live"
   }

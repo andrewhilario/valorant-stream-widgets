@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SITE_URL, resolveSiteAddress } from "./site-url";
+import { DEFAULT_SITE_URL, resolveSiteAddress, secureUrl } from "./site-url";
 
 const url = (configured: string | undefined, vercelHost?: string) => resolveSiteAddress(configured, vercelHost).url;
 
@@ -72,5 +72,18 @@ describe("whatever it is given, the result works as the base for the site's link
     const { url: base } = resolveSiteAddress(input);
     expect(() => new URL("/valorant-rank-calculator", base)).not.toThrow();
     expect(base.endsWith("/")).toBe(false);
+  });
+});
+
+describe("secureUrl: an address from an environment variable that opens a form", () => {
+  it("passes an https address through", () => {
+    expect(secureUrl("https://forms.gle/abc123")).toBe("https://forms.gle/abc123");
+    expect(secureUrl("  https://docs.google.com/forms/d/e/x/viewform  ")).toBe("https://docs.google.com/forms/d/e/x/viewform");
+  });
+
+  it("is empty when it is unset, blank, not https, or not an address", () => {
+    for (const value of [undefined, "", "   ", "http://forms.example", "javascript:alert(1)", "forms.gle/abc123", "https://", "ftp://forms.example", "not a url"]) {
+      expect(secureUrl(value)).toBe("");
+    }
   });
 });
