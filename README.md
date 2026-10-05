@@ -140,20 +140,26 @@ To see what people use before deciding what a paid tier should be, the site coun
 | `link_copied`, `theme_picked`, `layout_picked`, `try_game` | What they say. |
 | `pro_click` | The "Pro (coming soon)" link, and where it was (footer or editor). |
 
-- **No cookie, no ID, no IP address, no log.** The browser sends `{"e":"visit","a":"overlay","b":"reddit"}` to `POST /api/e` ([`route.ts`](src/app/api/e/route.ts), [`event-endpoint.ts`](src/lib/event-endpoint.ts)), which adds one to a Workers Analytics Engine dataset (`tally_events`, bound as `EVENTS`; the first write creates it). Cloudflare keeps those counts for three months. **Counting is switched off until you enable Analytics Engine** (dashboard, Workers & Pages, Analytics Engine, Set up, Enable): Cloudflare refuses to deploy a Worker with that binding before then (error 10089), so [`wrangler.jsonc`](wrangler.jsonc) has the binding left out, with the line to paste back in a comment. Until then the endpoint checks each event and drops it.
+- **No cookie, no ID, no IP address, no log.** The browser sends `{"e":"visit","a":"overlay","b":"reddit"}` to `POST /api/e` ([`route.ts`](src/app/api/e/route.ts), [`event-endpoint.ts`](src/lib/event-endpoint.ts)), which adds one to a Workers Analytics Engine dataset (`tally_events`, bound as `EVENTS` in [`wrangler.jsonc`](wrangler.jsonc)). Cloudflare keeps those counts for three months. **A new Cloudflare account has to switch Analytics Engine on once** before it will deploy a Worker with that binding (error 10089, "You need to enable Analytics Engine"). Here that was done in the dashboard: Storage & databases, Analytics Engine, Create Dataset, with the name `tally_events` and the binding `EVENTS`. A fork needs the same step, or its build fails; without the binding the endpoint checks each event and drops it.
 - **Do Not Track and Global Privacy Control are honoured:** nothing is sent. Only the site's own pages may post (the `Origin` must match), and anything outside the lists is refused.
 - **The OBS page sends exactly one count when it opens**, with no part of its link. That is the only thing it sends to this site. There are no analytics scripts anywhere, so the Content-Security-Policy didn't change.
 - **Without the binding** (local development, a fork) the endpoint checks the event and drops it.
 
 Reading the counts: `npm run stats` prints a report: visits, how many finish a setup and copy their link, overlay opens, what is picked, Pro clicks, and a week-by-week table. It needs your Cloudflare account ID and an API token with one permission, **Account > Account Analytics > Read** (My Profile, API Tokens, Create Token), as `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. `npm run stats -- --json` prints the raw rows.
 
-After deploying, check that it is wired up (this adds one test count; on Windows use `curl.exe`, because `curl` there is PowerShell's own command):
+After deploying, check that it is wired up (this adds one test count). In Git Bash or on macOS and Linux:
 
 ```bash
 curl -i -X POST https://valwidgets.live/api/e -H "Origin: https://valwidgets.live" -d '{"e":"visit","a":"other","b":"direct"}'
 ```
 
-`204` with `x-counted: yes` means counts are being stored. `x-counted: no` means events are accepted but dropped, which is how it starts: the `EVENTS` binding is left out of `wrangler.jsonc` until Analytics Engine is enabled (see above). `403` means the `Origin` didn't match the host you called.
+In Windows PowerShell, use `curl.exe` (plain `curl` there is PowerShell's own command), and escape the quotes inside the JSON, or the request arrives as invalid JSON and answers `400`:
+
+```powershell
+curl.exe -i -X POST https://valwidgets.live/api/e -H "Origin: https://valwidgets.live" -d '{\"e\":\"visit\",\"a\":\"other\",\"b\":\"direct\"}'
+```
+
+`204` with `x-counted: yes` means counts are being stored. `x-counted: no` means events are accepted but dropped, because the `EVENTS` binding isn't there (a fork before Analytics Engine is enabled, or the line was removed from `wrangler.jsonc`). `403` means the `Origin` didn't match the host you called.
 
 The FAQ answer "Do you track what I do?" says the same in plain words, and `faq.test.ts` ties it to the code. If you change what is counted, change both.
 

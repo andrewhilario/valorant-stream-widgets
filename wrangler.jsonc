@@ -29,13 +29,16 @@
   "observability": {
     "enabled": true
   },
-  // Anonymous event counts (src/lib/events.ts) are written to a Workers Analytics Engine dataset through a binding called EVENTS.
-  // Cloudflare refuses to deploy a Worker with that binding (error 10089, "You need to enable Analytics Engine") until Analytics
-  // Engine has been switched on once for the account: dashboard, Workers & Pages, Analytics Engine, Set up, Enable. Until then the
-  // binding is left out, and /api/e checks each event and drops it (it answers `x-counted: no`). To start counting, enable it,
-  // then add this back above "vars" and push; the dataset is created by the first write.
-  //
-  //   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "tally_events" }],
+  // Anonymous event counts (src/lib/events.ts) go to this Workers Analytics Engine dataset. A Cloudflare account has to switch
+  // Analytics Engine on once before it will deploy a Worker with this binding (error 10089, "You need to enable Analytics Engine").
+  // Here that was done in the dashboard: Storage & databases, Analytics Engine, Create Dataset (name tally_events, binding EVENTS).
+  // Without the binding, /api/e checks each event and drops it (it answers `x-counted: no`).
+  "analytics_engine_datasets": [
+    {
+      "binding": "EVENTS",
+      "dataset": "tally_events"
+    }
+  ],
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live"
   }
