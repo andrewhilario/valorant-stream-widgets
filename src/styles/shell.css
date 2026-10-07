@@ -218,6 +218,30 @@
   color: var(--color-ink-2);
 }
 
+/* What to know before trusting an overlay's numbers: one line always showing, the detail behind a disclosure. */
+.notice {
+  display: grid;
+  gap: var(--space-2xs);
+  max-width: 70ch;
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.notice__summary {
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.notice__summary::before {
+  content: "\2248";
+  margin-inline-end: 0.5em;
+  color: var(--color-accent);
+}
+
+.notice__list {
+  list-style: disc;
+}
+
 .status {
   display: flex;
   align-items: center;

@@ -36,6 +36,21 @@ export function Title({ onSelectWidget }: { onSelectWidget?: (id: string) => voi
         <div>
           <h1 id="page-title">{widget.name} for OBS</h1>
           <p className="lede">{widget.tagline} One link into OBS. Free, no account.</p>
+          {widget.notes && (
+            <div className="notice">
+              <p className="notice__summary">{widget.notes.summary}</p>
+              <details className="advanced advanced--inline">
+                <summary>{widget.notes.heading}</summary>
+                <div className="howto">
+                  <ul className="howto__steps notice__list">
+                    {widget.notes.points.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
+          )}
         </div>
         {onSelectWidget && (
           <div className="seg seg--sm" role="radiogroup" aria-label="Select overlay type" style={{ margin: "0.25rem 0" }}>

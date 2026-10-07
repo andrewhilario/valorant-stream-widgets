@@ -4,10 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchAgents, type Agent } from "@/lib/agents";
 import { looksLikeKey } from "@/lib/henrik-client";
 import { cumulativeMp, mpForLevel, mpPerMatch } from "@/lib/mastery";
-import { normalizeMatches, type MatchSummary, type Me } from "@/lib/matches";
+import { normalizeMatches, type Me } from "@/lib/matches";
 import type { PreviewStatus } from "@/lib/preview";
 import { parseRiotId, type Platform, type Region } from "@/lib/riot";
 import type { MasteryData, MasteryMatch, MasteryStart } from "./mastery-types";
+import { addMatches, countedList, loadSession, saveSession, sessionKey, type Session } from "./session";
 import { sampleMastery, type MasterySampleVariant } from "./sample";
 
 export type MasteryDataStatus = PreviewStatus;
@@ -94,6 +95,25 @@ export function computeMasteryState(start: MasteryStart, matches: MasteryMatch[]
   };
 }
 
+/** The counted matches as the widget shows them: MP worked out from each one's length and result, with the bonus you set. */
+export function toMasteryMatches(session: Session, bonusPct: number): MasteryMatch[] {
+  return countedList(session).map((m) => ({
+    id: m.id,
+    at: m.endedAt,
+    won: m.won,
+    durationMinutes: Math.round((m.lengthMs / 60000) * 10) / 10,
+    mpEarned: calculateMatchMp(m.lengthMs, m.won, bonusPct),
+  }));
+}
+
+function safeStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null; // blocked or unavailable: the count then lives as long as the page does
+  }
+}
+
 export function useMasteryData({
   riotId,
   region,
@@ -116,7 +136,6 @@ export function useMasteryData({
   const [matches, setMatches] = useState<MasteryMatch[]>([]);
   const [status, setStatus] = useState<MasteryDataStatus>({ state: sample ? "sample" : "idle" });
   const [now, setNow] = useState(() => Date.now());
-  const [sessionStartTime] = useState(() => Date.now() - 4 * 3600 * 1000); // lookback up to 4 hours
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000);
@@ -149,6 +168,14 @@ export function useMasteryData({
       return;
     }
 
+    // What has been counted so far for this starting point (see session.ts), kept in this browser's storage: a reload keeps the
+    // total, a match dropping out of HenrikDev's list of ten doesn't take its MP with it, and games played before the overlay
+    // was opened are not counted again. The API key is never part of the storage key.
+    const store = safeStorage();
+    const storeKey = sessionKey({ riotId: `${target.name}#${target.tag}`, region, platform, agentId, agentName, currentLevel, mpIntoLevel });
+    let session: Session = loadSession(store, storeKey, Date.now());
+    setMatches(toMasteryMatches(session, bonusPct));
+
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
@@ -180,29 +207,15 @@ export function useMasteryData({
         if (res.ok) {
           const json = await res.json();
           const me: Me = { name: target.name, tag: target.tag };
-          const summaries: MatchSummary[] = normalizeMatches(json, me);
-
-          // Filter matches for the tracked agent, occurring after session start
-          const relevant = summaries.filter((m) => {
-            const agentMatches =
-              (agentId && m.agent.id === agentId) ||
-              (!agentId && agentName && m.agent.name.toLowerCase() === agentName.toLowerCase()) ||
-              (!agentId && !agentName); // if no agent specified, count all
-            const afterSession = m.startedAt === null || m.startedAt >= sessionStartTime;
-            return agentMatches && afterSession;
-          });
-
-          const converted: MasteryMatch[] = relevant.map((m) => ({
-            id: m.id,
-            at: m.startedAt ?? Date.now(),
-            won: m.won === true,
-            durationMinutes: Math.round((m.lengthMs / 60000) * 10) / 10,
-            mpEarned: calculateMatchMp(m.lengthMs, m.won, bonusPct),
-          }));
+          const next = addMatches(session, normalizeMatches(json, me), { agentId, agentName });
+          if (next.added > 0) {
+            session = next.session;
+            saveSession(store, storeKey, session);
+            setMatches(toMasteryMatches(session, bonusPct));
+          }
 
           errors = 0;
           lastOkAt = Date.now();
-          setMatches(converted);
           setNow(Date.now());
           setStatus({ state: "live", updatedAt: Date.now(), partial: false });
           schedule(refresh);
@@ -250,7 +263,7 @@ export function useMasteryData({
       document.removeEventListener("visibilitychange", onVisible);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [identity, sample, refresh, debounceMs, agentId, agentName, bonusPct]);
+  }, [identity, sample, refresh, debounceMs, agentId, agentName, bonusPct, currentLevel, mpIntoLevel]);
 
   const liveData = useMemo(() => computeMasteryState(startConfig, matches), [startConfig, matches]);
 

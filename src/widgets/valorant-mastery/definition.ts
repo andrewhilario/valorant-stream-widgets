@@ -106,6 +106,7 @@ export const VALORANT_AGENTS = [
   "Jett",
   "KAY/O",
   "Killjoy",
+  "Miks",
   "Neon",
   "Omen",
   "Phoenix",
@@ -115,8 +116,10 @@ export const VALORANT_AGENTS = [
   "Skye",
   "Sova",
   "Tejo",
+  "Veto",
   "Viper",
   "Vyse",
+  "Waylay",
   "Yoru",
 ];
 
@@ -142,9 +145,24 @@ const targetOptions = () => {
   return out;
 };
 
-export const DISCLAIMER =
-  `Mastery Points are estimated from Riot's published base rate (${MASTERY_SOURCE.patch}): ` +
-  `80 MP/min + 1.3× win bonus. Actual in-game totals may differ due to Riot's undisclosed Performance Score formula.`;
+/**
+ * What to know before trusting the numbers, shown in the editor under the title. It says what the overlay does, as the code does it:
+ * keep it in step with session.ts and useMasteryData.ts, and with the Mastery FAQ and the ad.
+ */
+export const NOTES = {
+  summary: "Estimates, close enough to track your levels.",
+  heading: "How this counts",
+  points: [
+    "Type your Act Level and the MP the game shows right before you play, then open the overlay. It adds every match that finishes after that, on the agent you picked.",
+    "A match is added once it has finished and HenrikDev lists it, usually a minute or two later. Nothing changes during a match.",
+    `The MP are estimated from Riot's published rate (patch ${MASTERY_SOURCE.patch}): 80 a minute, 1.3 times that for a win, plus the bonus % you set under Advanced. Riot hasn't published how Performance Score counts, so your in-game total may differ a little.`,
+    "Riot counts the seconds you actually played. The overlay uses the whole match length, so if you leave early or disconnect, the numbers will differ.",
+    "It can't tell which game mode a match was, so it also counts modes that don't earn Mastery Points (like Deathmatch) if you play them on that agent.",
+    "It can't read your real Mastery from the game. If it drifts, type your numbers in again: that starts a new count.",
+    "It needs your Riot ID and HenrikDev key to see your matches. Without them it only shows the numbers you typed.",
+    "It remembers what it has counted in the browser that runs it, so a reload keeps your total. Clearing that browser source's cache starts the count again from your typed numbers.",
+  ],
+};
 
 export const sections: Section[] = [
   {

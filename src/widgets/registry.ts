@@ -27,6 +27,8 @@ export type WidgetMeta = {
   /** What's still missing for a working OBS link, and which control to send the user to; null when complete. */
   needs: (config: Config) => { message: string; focus: string } | null;
   tryouts?: Tryouts;
+  /** What to know before trusting the numbers: a one-line summary under the title, and the details behind a disclosure. */
+  notes?: { summary: string; heading: string; points: string[] };
 };
 
 // Adding a widget: write its definition (schema + defaults), its renderer and
@@ -58,6 +60,7 @@ export const widgets: Record<string, WidgetMeta> = {
     id: valorantMastery.WIDGET_ID,
     name: valorantMastery.WIDGET_NAME,
     tagline: "Track Act Level, Mastery Points and match progress.",
+    notes: valorantMastery.NOTES,
     schema: valorantMastery.schema,
     defaults: valorantMastery.defaults,
     firstRun: (defaults, env) => ({ ...defaults, region: guessRegion(env.timeZone) }),

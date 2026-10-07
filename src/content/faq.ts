@@ -167,6 +167,13 @@ export const masteryFaq: FaqItem[] = [
     ],
   },
   {
+    q: "When does the Mastery overlay add points?",
+    paragraphs: [
+      "Once a match has finished and HenrikDev lists it, which is usually a minute or two later. Nothing changes during a match. The overlay then adds that match’s estimated MP to the Act Level and MP you typed in, and plays its animation.",
+      "Only matches that finish after you open the overlay count, and only on the agent you picked, so type your numbers in right before you play. It remembers what it has counted in the browser that runs it, so a reload keeps your total. It can’t tell which game mode a match was, so it also counts modes that don’t earn Mastery Points if you play them on that agent.",
+    ],
+  },
+  {
     q: "Can the calculator see my Mastery progress?",
     paragraphs: [
       "No. The data service this site uses has no Mastery information, so you enter your Act Level and the MP you’ve earned toward the next one from the Mastery screen in the game.",
