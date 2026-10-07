@@ -10,16 +10,25 @@ const bmcWidget = process.env.NEXT_PUBLIC_BMC_WIDGET?.trim().toLowerCase() !== "
 // http://localhost:3000 into every canonical link, social card address and the sitemap. That went unnoticed while the Worker drew
 // the pages on each request (where `vars` is visible) and showed at once when it started serving what the build made. The public
 // address is already written down in wrangler.jsonc, so the build uses it when the variable isn't set.
-function siteUrlFromWrangler(): string | undefined {
+function wranglerVar(name: string): string | undefined {
   try {
     const text = readFileSync(join(process.cwd(), "wrangler.jsonc"), "utf8").replace(/^\s*\/\/.*$/gm, "");
-    const value = (JSON.parse(text) as { vars?: { NEXT_PUBLIC_SITE_URL?: unknown } }).vars?.NEXT_PUBLIC_SITE_URL;
+    const value = (JSON.parse(text) as { vars?: Record<string, unknown> }).vars?.[name];
     return typeof value === "string" && value.trim() ? value.trim() : undefined;
   } catch {
     return undefined;
   }
 }
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || siteUrlFromWrangler();
+const publicVar = (name: string) => process.env[name]?.trim() || wranglerVar(name);
+const siteUrl = publicVar("NEXT_PUBLIC_SITE_URL");
+// The other public addresses work the same way: a build variable wins, and otherwise the one in wrangler.jsonc is used, so a
+// form's address can ship with the code and doesn't have to be typed into the dashboard (see config/site.ts).
+const formAddresses = Object.fromEntries(
+  ["NEXT_PUBLIC_FEEDBACK_URL", "NEXT_PUBLIC_PRO_INTEREST_URL"].flatMap((name) => {
+    const value = publicVar(name);
+    return value ? [[name, value]] : [];
+  }),
+);
 
 const policy = (directives: Record<string, string[]>) =>
   Object.entries(directives)
@@ -106,7 +115,7 @@ export default (phase: string): NextConfig => {
     reactStrictMode: true,
     poweredByHeader: false,
     // Baked into the pages at build time, from the variable or, failing that, from wrangler.jsonc (see above).
-    env: siteUrl ? { NEXT_PUBLIC_SITE_URL: siteUrl } : {},
+    env: { ...(siteUrl ? { NEXT_PUBLIC_SITE_URL: siteUrl } : {}), ...formAddresses },
     async headers() {
       return [
         {

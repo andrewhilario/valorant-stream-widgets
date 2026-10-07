@@ -32,6 +32,15 @@ export const pro = {
   interestUrl: secureUrl(process.env.NEXT_PUBLIC_PRO_INTEREST_URL),
 } as const;
 
+/**
+ * Feedback goes to a form of the owner's own, for example a Google Form, so the site needs no server or storage for it. While
+ * NEXT_PUBLIC_FEEDBACK_URL is set (to an https address), the footer and the Ctrl+K search show a quiet "Feedback" link that
+ * opens the form in a new tab, sending nothing about the visitor along. Unset, there is no link.
+ */
+export const feedback = {
+  url: secureUrl(process.env.NEXT_PUBLIC_FEEDBACK_URL),
+} as const;
+
 /** Buy Me a Coffee. The page link, plus the floating widget's settings. */
 export const bmc = {
   handle: "ainzzuu",

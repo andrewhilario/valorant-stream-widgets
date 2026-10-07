@@ -31,7 +31,7 @@
   },
   // Anonymous event counts (src/lib/events.ts) go to this Workers Analytics Engine dataset. A Cloudflare account has to switch
   // Analytics Engine on once before it will deploy a Worker with this binding (error 10089, "You need to enable Analytics Engine").
-  // Here that was done in the dashboard: Storage & databases, Analytics Engine, Create Dataset (name tally_events, binding EVENTS).
+  // Here that was the Enable button on the dashboard page Storage & databases, Analytics Engine; creating a dataset by hand didn't do it.
   // Without the binding, /api/e checks each event and drops it (it answers `x-counted: no`).
   "analytics_engine_datasets": [
     {
@@ -40,6 +40,9 @@
     }
   ],
   "vars": {
-    "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live"
+    "NEXT_PUBLIC_SITE_URL": "https://valwidgets.live",
+    // The feedback form's public address (a Google Form). The build reads it from here when no build variable is set, so the
+    // footer's "Feedback" link ships with the code. To change it, edit it here; a build variable of the same name wins.
+    "NEXT_PUBLIC_FEEDBACK_URL": "https://docs.google.com/forms/d/e/1FAIpQLSfJQ2-jrhOdTulAkuJ7c35V3FEQmZRq9OuiROSkCq5vXJdN3Q/viewform"
   }
 }

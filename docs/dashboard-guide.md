@@ -9,14 +9,13 @@ Open https://dash.cloudflare.com and sign in. You'll use two places:
 
 ---
 
-## 1. Turn on usage counting (5 minutes, then one message to me)
+## 1. Turn on usage counting (done on 4 October 2026)
 
-Cloudflare refuses to deploy the counter until Analytics Engine has been switched on once for your account. It is free at this size (the free plan includes 100,000 counts a day).
+Cloudflare refuses to deploy the counter until Analytics Engine has been switched on once for your account. It is free at this size (the free plan includes 100,000 counts a day). This is already done and working; the steps are here for a new account or a fork.
 
-1. In the left menu open **Storage & databases**, then **Analytics Engine**, then **Create Dataset**.
-2. Dataset Name: `tally_events`. Dataset Binding: `EVENTS`. Click **Create Dataset**. (Cloudflare then shows the `wrangler.jsonc` lines it matches. This is the step that switches Analytics Engine on.)
-3. Tell me you've done it. I'll put the binding into `wrangler.jsonc` and push, so the next deploy keeps it. (Doing it yourself instead: paste `"analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "tally_events" }],` just above `"vars"` in `wrangler.jsonc`, then commit and push.)
-4. After that deploy finishes, check it in PowerShell. You want `204` and `x-counted: yes`:
+1. In the left menu open **Storage & databases**, then **Analytics Engine**, and click **Enable**. Creating a dataset on that page is not enough: the deploy kept failing with "You need to enable Analytics Engine" (code 10089) until Enable was clicked.
+2. The binding (`EVENTS`, dataset `tally_events`) is already in `wrangler.jsonc`, so the next deploy picks it up. If a build failed before you clicked Enable, open it and click **Retry build**.
+3. Check it in PowerShell. You want `204` and `x-counted: yes` (this adds one test count):
 
 ```powershell
 curl.exe -i -X POST https://valwidgets.live/api/e -H "Origin: https://valwidgets.live" -d '{\"e\":\"visit\",\"a\":\"other\",\"b\":\"direct\"}'
@@ -117,9 +116,26 @@ The link only shows once the site knows your form's address.
 
 ---
 
+## 7. Add the Feedback link (10 minutes)
+
+People can send you feedback from a quiet "Feedback" link in the footer (and from the Ctrl+K search). It opens a Google Form in a new tab, so the site stores nothing and needs no server for it. Each answer reaches you as an email, and all of them pile up in a spreadsheet.
+
+1. **Make the form.** Go to https://forms.google.com and start a blank form. Title it `Tally feedback`. In the description write: `Tell me what's not working or what you'd like. Please don't include your HenrikDev key or any password.` Add these questions:
+   - **Multiple choice**, required: `What is it?` with the options `An idea`, `A problem`, `Something else`.
+   - **Paragraph**, required: `What happened, or what would you like?`
+   - **Dropdown**, not required: `Where?` with the options `Rank overlay`, `Mastery overlay`, `Rank calculator`, `Mastery calculator`, `Somewhere else`.
+   - **Short answer**, not required: `Email or Discord, only if you want a reply`.
+2. **Keep it easy to answer.** Open the **Settings** tab and make sure **Collect email addresses** and **Limit to 1 response** are both off (each one makes people sign in to Google). Under **Presentation** you can change the confirmation message to `Thanks, that helps.`
+3. **Get an email for every answer.** Open the **Responses** tab, click the three dots, and choose **Get email notifications for new responses**. Also click **Link to Sheets** to keep every answer in a spreadsheet.
+4. Click **Send**, the **link** tab, tick **Shorten URL**, and copy the `https://forms.gle/...` address.
+5. **Tell me the link** (it isn't secret). The address goes into `wrangler.jsonc` and ships with the next push, so there is nothing to type into Cloudflare. (You could add a build variable named `NEXT_PUBLIC_FEEDBACK_URL` instead; it wins over the file.)
+6. When the deploy is done, https://valwidgets.live shows **Feedback** in the footer. Click it to check the form opens, then send a test answer to see the email arrive.
+
+---
+
 ## Final check
 
-When you've done parts 2, 3 and 4 (and 1 once the counter is pushed), run this. Every line should look as described:
+When you've done parts 2, 3 and 4, run this. Every line should look as described:
 
 ```powershell
 "redirects (want 301):"; curl.exe -sI http://valwidgets.live/ | Select-String "^HTTP"; curl.exe -sI https://www.valwidgets.live/ | Select-String "^HTTP"

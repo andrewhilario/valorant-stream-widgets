@@ -99,4 +99,12 @@ describe("the Cloudflare configuration", () => {
     const vars = (JSON.parse(config.replace(/^\s*\/\/.*$/gm, "")) as { vars?: { NEXT_PUBLIC_SITE_URL?: string } }).vars;
     expect(vars?.NEXT_PUBLIC_SITE_URL).toMatch(/^https:\/\/[a-z0-9.-]+$/);
   });
+
+  // The feedback form's address ships from here (see next.config.ts). The site only shows a link for an https address.
+  it("holds the feedback form's address, if it has one, as an https address with nothing tracking-like on it", () => {
+    const vars = (JSON.parse(config.replace(/^\s*\/\/.*$/gm, "")) as { vars?: { NEXT_PUBLIC_FEEDBACK_URL?: string } }).vars;
+    const address = vars?.NEXT_PUBLIC_FEEDBACK_URL;
+    if (address === undefined) return;
+    expect(address).toMatch(/^https:\/\/[A-Za-z0-9.\-_/]+$/);
+  });
 });

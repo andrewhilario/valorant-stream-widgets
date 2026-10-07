@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { pageList } from "@/config/pages";
-import { pro, riotDisclaimer, site } from "@/config/site";
+import { feedback, pro, riotDisclaimer, site } from "@/config/site";
 import { SupportLink } from "../sections/SupportLink";
+import { FeedbackLink } from "./FeedbackLink";
 import { ProLink } from "./ProLink";
 
 function Sep() {
@@ -34,6 +35,12 @@ export function Footer() {
           <>
             <Sep />
             <ProLink variant="link" where="footer" />
+          </>
+        )}
+        {feedback.url && (
+          <>
+            <Sep />
+            <FeedbackLink />
           </>
         )}
         <Sep />

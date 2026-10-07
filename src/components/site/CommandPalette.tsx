@@ -4,6 +4,7 @@ import { CornerDownLeft, Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { pageList } from "@/config/pages";
+import { feedback } from "@/config/site";
 import { usePalette, type PaletteItem } from "./PaletteProvider";
 
 const GROUP_ORDER = ["Actions", "Settings", "Go to"];
@@ -47,7 +48,21 @@ export function CommandPalette() {
         words: "page tool open navigate",
         run: () => router.push(page.path),
       }));
-    return [...pageItems, ...goTo];
+    // Only while the feedback form's address is set (see config/site.ts). It opens in a new tab and sends nothing along.
+    const url = feedback.url;
+    const send: PaletteItem[] = url
+      ? [
+          {
+            id: "feedback",
+            group: "Actions",
+            label: "Send feedback",
+            detail: "Opens the form in a new tab",
+            words: "feedback bug problem idea suggestion report contact",
+            run: () => window.open(url, "_blank", "noopener,noreferrer"),
+          },
+        ]
+      : [];
+    return [...pageItems, ...send, ...goTo];
   }, [pageItems, pathname, router]);
 
   const grouped = useMemo(() => {
