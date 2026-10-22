@@ -1,5 +1,7 @@
-// Match summaries from HenrikDev's v4 matches endpoint, reduced to what the calculators need:
-// which agent you played, how long the match ran, and whether you won.
+// Match summaries from HenrikDev's v4 matches endpoint, reduced to what the calculators and the Full rank layout need:
+// which agent you played, how long the match ran, whether you won, and your kills and deaths.
+
+import type { KdSummary } from "./rank-types";
 
 export type Me = { name: string; tag: string; puuid?: string | null };
 
@@ -11,6 +13,9 @@ export type MatchSummary = {
   agent: { id: string; name: string };
   /** From the team result; null when the payload didn't say. */
   won: boolean | null;
+  /** Your kills and deaths in it, or null when the payload didn't say. */
+  kills: number | null;
+  deaths: number | null;
 };
 
 type Obj = Record<string, unknown>;
@@ -58,6 +63,10 @@ export function normalizeMatches(json: unknown, me: Me): MatchSummary[] {
       if (team && typeof team.won === "boolean") won = team.won;
     }
 
+    const stats = isObj(player.stats) ? player.stats : {};
+    const kills = num(stats.kills);
+    const deaths = num(stats.deaths);
+
     const started = typeof metadata.started_at === "string" ? Date.parse(metadata.started_at) : NaN;
     out.push({
       id,
@@ -65,7 +74,24 @@ export function normalizeMatches(json: unknown, me: Me): MatchSummary[] {
       lengthMs,
       agent: { id: agentId, name: agentName },
       won,
+      kills: kills !== null && kills >= 0 ? kills : null,
+      deaths: deaths !== null && deaths >= 0 ? deaths : null,
     });
   }
   return out;
+}
+
+/** One K/D over these matches: all the kills over all the deaths, from the matches that say both. */
+export function summariseKd(matches: MatchSummary[]): KdSummary {
+  let kills = 0;
+  let deaths = 0;
+  let games = 0;
+  for (const m of matches) {
+    if (m.kills === null || m.deaths === null) continue;
+    kills += m.kills;
+    deaths += m.deaths;
+    games += 1;
+  }
+  if (games === 0) return { value: null, games: 0 };
+  return { value: deaths > 0 ? kills / deaths : kills > 0 ? kills : null, games };
 }

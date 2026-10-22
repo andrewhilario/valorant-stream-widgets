@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeMatches } from "./matches";
+import { normalizeMatches, summariseKd } from "./matches";
 
 const JETT = { id: "jett-id", name: "Jett" };
 const SAGE = { id: "sage-id", name: "Sage" };
@@ -44,7 +44,15 @@ describe("normalizeMatches", () => {
       lengthMs: 1_800_000,
       agent: JETT,
       won: true,
+      kills: null,
+      deaths: null,
     });
+  });
+
+  it("reads your kills and deaths from your own stats, and leaves them null when the stats are missing or not counts", () => {
+    expect(normalizeMatches({ data: [match({ me: { stats: { kills: 24, deaths: 13, assists: 5 } } })] }, me)[0]).toMatchObject({ kills: 24, deaths: 13 });
+    expect(normalizeMatches({ data: [match({ me: { stats: { kills: "24", deaths: -1 } } })] }, me)[0]).toMatchObject({ kills: null, deaths: null });
+    expect(normalizeMatches({ data: [match()] }, me)[0]).toMatchObject({ kills: null, deaths: null });
   });
 
   it("finds the player by puuid first, even if the name changed", () => {
@@ -97,5 +105,24 @@ describe("normalizeMatches", () => {
 
   it.each([null, undefined, "nope", 7, {}, { data: null }, { data: {} }])("returns nothing for %j", (payload) => {
     expect(normalizeMatches(payload, me)).toEqual([]);
+  });
+});
+
+describe("summariseKd", () => {
+  const game = (kills: number | null, deaths: number | null) => ({ id: "x", startedAt: null, lengthMs: 1, agent: JETT, won: null, kills, deaths });
+
+  it("is all the kills over all the deaths, not the average of each game's ratio", () => {
+    // 30/10 = 3 and 5/20 = 0.25 would average 1.625; together it is 35/30
+    expect(summariseKd([game(30, 10), game(5, 20)])).toEqual({ value: 35 / 30, games: 2 });
+  });
+
+  it("leaves out games that do not say both numbers, and says how many it used", () => {
+    expect(summariseKd([game(10, 5), game(null, 4), game(7, null)])).toEqual({ value: 2, games: 1 });
+  });
+
+  it("counts a game with no deaths as its kills, and says nothing when there is nothing to say", () => {
+    expect(summariseKd([game(18, 0)])).toEqual({ value: 18, games: 1 });
+    expect(summariseKd([game(0, 0)])).toEqual({ value: null, games: 1 });
+    expect(summariseKd([])).toEqual({ value: null, games: 0 });
   });
 });

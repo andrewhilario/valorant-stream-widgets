@@ -993,3 +993,182 @@ body {
     animation: none;
   }
 }
+
+/* ── Full: the big card ─────────────────────────────────────────────────────
+   A live badge and the Act on top, the rank with a big badge, a rating bar, then K/D, W/L and win rate, and a win streak. The glow
+   is a drop-shadow on .w itself (not the panel), so it follows the panel's cut corners instead of being clipped by them; the
+   padding gives it room, and counts in the size OBS needs. Plain colours, gradients and a filter only. */
+
+.w[data-layout="full"] {
+  width: 39em;
+  padding: 1.5em;
+  filter: drop-shadow(0 0 1.1em var(--w-tier-glow));
+}
+
+.w[data-layout="full"] .w__panel {
+  padding: 0;
+  background:
+    linear-gradient(var(--w-grid) 1px, transparent 1px) 0 0 / 2.4em 2.4em,
+    linear-gradient(90deg, var(--w-grid) 1px, transparent 1px) 0 0 / 2.4em 2.4em,
+    var(--w-surface);
+}
+
+.w__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 1.1em 1.6em 0;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--w-muted);
+}
+
+.w__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85em;
+}
+
+.w__dot {
+  display: block;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+  background: var(--w-tier);
+  box-shadow: 0 0 0.8em var(--w-tier);
+}
+
+.w__act {
+  white-space: nowrap;
+}
+
+.w[data-layout="full"] .w__head {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 1.8em;
+  padding: 1.1em 1.6em 1.5em;
+  background: radial-gradient(ellipse 60% 90% at 16% 45%, var(--w-tier-soft), transparent 70%);
+}
+
+.w__badge--hero {
+  width: 8.5em;
+  height: 8.5em;
+}
+
+.w[data-layout="full"] .w__badge img,
+.w[data-layout="full"] .w__glyph {
+  filter: drop-shadow(0 0 1em var(--w-tier-glow));
+}
+
+.w__kicker {
+  margin: 0 0 0.4em;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--w-muted);
+}
+
+.w[data-layout="full"] .w__tier {
+  font-size: calc(var(--w-tier-size) * 1.65);
+  color: var(--w-tier);
+}
+
+.w[data-layout="full"] .w__rr {
+  display: none;
+}
+
+.w[data-layout="full"] .w__progress {
+  margin-top: 1.1em;
+}
+
+.w[data-layout="full"] .w__pmeta--top {
+  align-items: baseline;
+  margin: 0 0 0.65em;
+  font-size: 0.78em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.w[data-layout="full"] .w__progress .w__pmeta--top {
+  margin-bottom: 0.65em;
+}
+
+.w[data-layout="full"] .w__track {
+  height: 0.75em;
+}
+
+.w[data-layout="full"] .w__stats {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  border-top: var(--w-line) solid var(--w-border);
+}
+
+.w[data-layout="full"] .w__stat,
+.w[data-layout="full"] .w__stat:first-child,
+.w[data-layout="full"] .w__stat:last-child {
+  padding: 1.1em 0.6em 1.15em;
+  text-align: center;
+}
+
+.w[data-layout="full"] .w__stat dt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55em;
+}
+
+.w[data-layout="full"] .w__stat dd {
+  margin-top: 0.5em;
+  font-size: calc(var(--w-lead-size) * 1.05);
+}
+
+.w[data-layout="full"] .w__sub {
+  margin-top: 0.4em;
+}
+
+.w__icon {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.w__dim {
+  color: var(--w-muted);
+}
+
+.w__num[data-tone="tier"] {
+  color: var(--w-tier);
+}
+
+.w__foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7em;
+  margin: 0;
+  padding: 0.95em 1.5em;
+  border-top: var(--w-line) solid var(--w-border);
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--w-ink);
+}
+
+.w__foot .w__icon {
+  color: var(--w-tier);
+}

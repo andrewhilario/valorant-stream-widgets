@@ -2,7 +2,7 @@
 // it can be unit-tested against the documented payloads. Written to the v3 MMR
 // and v2 MMR-history schemas from docs.henrikdev.xyz.
 
-import type { RankData } from "./rank-types";
+import type { RankData, SeasonResult } from "./rank-types";
 import type { HistoryEntry } from "./session";
 import { tierName } from "./tiers";
 
@@ -29,7 +29,22 @@ export function parseWhen(value: unknown): number | null {
   return null;
 }
 
-type Core = Pick<RankData, "account" | "current" | "peak">;
+/** Wins and games per season, from the lookup's `seasonal` list. An entry that is not a plain count is skipped, not fatal. */
+export function normalizeSeasons(raw: unknown): SeasonResult[] {
+  if (!Array.isArray(raw)) return [];
+  const out: SeasonResult[] = [];
+  for (const s of raw) {
+    if (!isObj(s) || !isObj(s.season)) continue;
+    const id = str(s.season.id);
+    const wins = num(s.wins);
+    const games = num(s.games);
+    if (id === null || wins === null || games === null || wins < 0 || games < 0 || wins > games) continue;
+    out.push({ id: id.toLowerCase(), short: str(s.season.short)?.toLowerCase() ?? null, wins, games });
+  }
+  return out;
+}
+
+type Core = Pick<RankData, "account" | "current" | "peak" | "seasons">;
 
 export function normalizeMmr(json: unknown, fallback: { name: string; tag: string }): Core {
   if (!isObj(json) || !isObj(json.data)) throw new ShapeError("MMR response has no data object");
@@ -71,6 +86,7 @@ export function normalizeMmr(json: unknown, fallback: { name: string; tag: strin
       leaderboardRank: board,
     },
     peak,
+    seasons: normalizeSeasons(data.seasonal),
   };
 }
 

@@ -106,3 +106,18 @@ export function computeSession(history: HistoryEntry[], opts: SessionOptions): S
     winRate: decided > 0 ? (wins / decided) * 100 : null,
   };
 }
+
+/** The run the newest decided games are on: how many wins (or losses) in a row, newest first. A game that changed nothing and was not protected is skipped. */
+export function currentStreak(history: HistoryEntry[]): { kind: "win" | "loss" | null; length: number } {
+  const sorted = history.filter((e) => Number.isFinite(e.at)).sort((a, b) => b.at - a.at);
+  let kind: "win" | "loss" | null = null;
+  let length = 0;
+  for (const game of sorted) {
+    const result = game.change > 0 ? "win" : game.change < 0 || game.protected ? "loss" : null;
+    if (result === null) continue;
+    if (kind === null) kind = result;
+    if (result !== kind) break;
+    length += 1;
+  }
+  return { kind, length };
+}

@@ -1,9 +1,14 @@
-import type { RankData } from "@/lib/rank-types";
+import type { CurrentAct } from "@/lib/act-record";
+import type { KdSummary, RankData } from "@/lib/rank-types";
 import { tierName } from "@/lib/tiers";
 
 export type SampleVariant = "diamond" | "immortal" | "radiant" | "unrated";
 
 const MINUTE = 60_000;
+
+/** The Act and the K/D the Full layout shows on the sample data (the record is in `seasons`, under the same id). */
+export const SAMPLE_ACT: CurrentAct = { id: "sample-act", label: "V26 · ACT VI", short: null };
+export const SAMPLE_KD: KdSummary = { value: 1.81, games: 10 };
 const CHANGES = [21, -14, 18, 22, -19, 16, -12, 19, 13, -15, 12];
 
 /**
@@ -23,6 +28,7 @@ export function sampleRank(now: number, variant: SampleVariant = "diamond"): Ran
       current: { tierId: 0, tier: "Unrated", rr: 0, elo: 0, lastChange: 0, gamesNeeded: 3, shields: 0, leaderboardRank: null },
       peak: null,
       history: [],
+      seasons: [],
     };
   }
 
@@ -57,5 +63,6 @@ export function sampleRank(now: number, variant: SampleVariant = "diamond"): Ran
     },
     peak: { tierId: Math.min(27, tierId + 3), tier: tierName(Math.min(27, tierId + 3)), season: null },
     history,
+    seasons: [{ id: SAMPLE_ACT.id, short: null, wins: 134, games: 223 }],
   };
 }

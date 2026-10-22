@@ -139,6 +139,7 @@ export function resolveTheme({ preset, accent, opacity, signals }: ThemeInput): 
     vars: {
       "--w-surface": cssRgb(surface, Math.min(1, Math.max(0, opacity / 100))),
       "--w-border": cssRgb(p.border),
+      "--w-grid": cssRgb(p.border, 0.4),
       "--w-ink": cssRgb(p.ink),
       "--w-muted": cssRgb(p.muted),
       "--w-track": cssRgb(p.track),
@@ -157,6 +158,11 @@ export function resolveTheme({ preset, accent, opacity, signals }: ThemeInput): 
 /** Rank-family colour, guaranteed visible on the panel. */
 export function tierColor(family: TierFamily, surface: Rgb): string {
   return cssRgb(ensureContrast(oklchToRgb(TIER_COLORS[family]), surface, 3));
+}
+
+/** The rank-family colour at a given see-through-ness: the glow behind the Full layout's badge and around its panel. */
+export function tierTone(family: TierFamily, surface: Rgb, alpha: number): string {
+  return cssRgb(ensureContrast(oklchToRgb(TIER_COLORS[family]), surface, 3), alpha);
 }
 
 const CORNER_WORDS: Record<Corners, string> = { sharp: "Sharp", chamfer: "Chamfer", round: "Round" };

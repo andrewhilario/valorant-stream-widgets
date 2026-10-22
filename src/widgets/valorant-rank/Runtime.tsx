@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RankData } from "@/lib/rank-types";
 import { fromLocation, sanitize, type Config } from "@/lib/schema";
-import { defaults, readConfig, schema } from "./definition";
+import { defaults, flagVisible, readConfig, schema } from "./definition";
 import { REACTION_KINDS, detectReaction, simulateGame, type Reaction, type ReactionKind } from "./reactions";
 import type { SampleVariant } from "./sample";
 import { useRankData, useTierIcons } from "./useRankData";
@@ -49,7 +49,8 @@ export function RankRuntime() {
 
   const cfg = useMemo(() => readConfig(config ?? defaults), [config]);
 
-  const { data, status, now } = useRankData({
+  const full = cfg.layout === "full";
+  const { data, status, now, kd, act } = useRankData({
     riotId: cfg.riotId,
     region: cfg.region,
     platform: cfg.platform,
@@ -57,6 +58,8 @@ export function RankRuntime() {
     refresh: cfg.refresh,
     sample,
     debounceMs: preview ? 600 : 0,
+    kd: full && flagVisible(cfg, "kd"),
+    act: full,
   });
 
   // Preview only: take setting changes, and "try a game" requests, from the editor.
@@ -156,7 +159,7 @@ export function RankRuntime() {
 
   return (
     <div className="w-root" ref={rootRef}>
-      {mounted && <RankWidget config={cfg} data={shown} icons={icons} now={now} ready={ready} reaction={reaction} />}
+      {mounted && <RankWidget config={cfg} data={shown} icons={icons} now={now} ready={ready} reaction={reaction} kd={kd} act={act} />}
     </div>
   );
 }

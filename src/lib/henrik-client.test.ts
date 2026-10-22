@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fail, fetchRank, fetchSnapshot, looksLikeKey, type Lookup } from "./henrik-client";
+import { fail, fetchKd, fetchRank, fetchSnapshot, looksLikeKey, type Lookup } from "./henrik-client";
 
 const KEY = "HDEV-00000000-1111-2222-3333-444444444444";
 const lookup: Lookup = { region: "ap", platform: "pc", name: "Night Owl", tag: "und3d", key: KEY };
@@ -248,5 +248,44 @@ describe("fail", () => {
     expect(fail("bad_key").message).toMatch(/rejected that key/i);
     expect(fail("rate_limited", 30)).toMatchObject({ retryAfter: 30 });
     expect(fail("not_found")).not.toHaveProperty("retryAfter");
+  });
+});
+
+describe("fetchKd", () => {
+  const me = { name: "Night Owl", tag: "und3d", puuid: "me" };
+  const player = (extra: Record<string, unknown>) => ({ puuid: "me", name: "Night Owl", tag: "und3d", team_id: "Red", agent: { id: "a", name: "Jett" }, ...extra });
+  const matchesBody = {
+    data: [
+      { metadata: { match_id: "m1", game_length_in_ms: 1_800_000, is_completed: true }, players: [player({ stats: { kills: 30, deaths: 10 } })], teams: [{ team_id: "Red", won: true }] },
+      { metadata: { match_id: "m2", game_length_in_ms: 1_800_000, is_completed: true }, players: [player({ stats: { kills: 5, deaths: 20 } })], teams: [{ team_id: "Red", won: false }] },
+    ],
+  };
+
+  it("asks for the last ranked games with the key in the header, and gives one K/D", async () => {
+    const fn = vi.fn(async () => reply({ body: matchesBody }));
+    vi.stubGlobal("fetch", fn);
+    const result = await fetchKd(lookup, me);
+    const [url, init] = fn.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.henrikdev.xyz/valorant/v4/matches/ap/pc/Night%20Owl/und3d?mode=competitive&size=10");
+    expect((init.headers as Record<string, string>).Authorization).toBe(KEY);
+    expect(url).not.toContain(KEY);
+    expect(result).toMatchObject({ ok: true, kd: { value: 35 / 30, games: 2 } });
+  });
+
+  it("asks nothing without a usable key, and maps what HenrikDev says", async () => {
+    const fn = vi.fn();
+    vi.stubGlobal("fetch", fn);
+    expect(await fetchKd({ ...lookup, key: "" }, me)).toMatchObject({ ok: false, code: "no_key" });
+    expect(await fetchKd({ ...lookup, key: "nope" }, me)).toMatchObject({ ok: false, code: "bad_key" });
+    expect(fn).not.toHaveBeenCalled();
+    for (const [status, code] of [[401, "bad_key"], [404, "not_found"], [429, "rate_limited"], [500, "upstream"]] as const) {
+      vi.stubGlobal("fetch", vi.fn(async () => reply({ status, body: {} })));
+      expect(await fetchKd(lookup, me)).toMatchObject({ ok: false, code });
+    }
+  });
+
+  it("says nothing of the games it could not read, rather than failing", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => reply({ body: { data: [] } })));
+    expect(await fetchKd(lookup, me)).toMatchObject({ ok: true, kd: { value: null, games: 0 } });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeSession, EMPTY_SESSION, type HistoryEntry } from "./session";
+import { computeSession, currentStreak, EMPTY_SESSION, type HistoryEntry } from "./session";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -93,5 +93,26 @@ describe("decided games", () => {
     expect(s.games).toBe(1);
     expect(s.wins + s.losses).toBe(0);
     expect(s.winRate).toBeNull();
+  });
+});
+
+describe("currentStreak", () => {
+  const at = (n: number, change: number, protectedLoss = false) => ({ id: "g" + n, at: 1_000_000 + n * 60_000, change, rr: 0, tierId: 25, protected: protectedLoss });
+
+  it("counts the wins in a row from the newest game", () => {
+    const history = [at(1, -12), at(2, 20), at(3, 18), at(4, 22)];
+    expect(currentStreak(history)).toEqual({ kind: "win", length: 3 });
+  });
+
+  it("counts a loss streak too, and treats a protected zero as a loss", () => {
+    expect(currentStreak([at(1, 15), at(2, -14), at(3, 0, true)])).toEqual({ kind: "loss", length: 2 });
+  });
+
+  it("is not thrown by the order the games came in, and skips a game that changed nothing", () => {
+    expect(currentStreak([at(4, 22), at(1, -12), at(3, 0), at(2, 20)])).toEqual({ kind: "win", length: 2 });
+  });
+
+  it("is nothing without games", () => {
+    expect(currentStreak([])).toEqual({ kind: null, length: 0 });
   });
 });

@@ -12,7 +12,7 @@ const tracked = { agentId: "jett-id", agentName: "Jett" };
 /** A match that ENDED `endedMinutesFromOpen` minutes after the overlay opened (negative: before), lasting `length` minutes. */
 function match(id: string, endedMinutesFromOpen: number, { length = 30, won = true, agent = JETT }: { length?: number; won?: boolean | null; agent?: typeof JETT } = {}): MatchSummary {
   const endedAt = OPENED + endedMinutesFromOpen * MIN;
-  return { id, startedAt: endedAt - length * MIN, lengthMs: length * MIN, agent, won };
+  return { id, startedAt: endedAt - length * MIN, lengthMs: length * MIN, agent, won, kills: null, deaths: null };
 }
 
 const fresh = (): Session => ({ openedAt: OPENED, matches: {} });

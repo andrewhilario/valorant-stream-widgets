@@ -57,6 +57,14 @@ export const overlayFaq: FaqItem[] = [
     ],
   },
   {
+    q: "What does the Full layout show?",
+    paragraphs: [
+      "Full is the big card: your rank with its badge, the rank rating bar, then K/D, your win–loss record and win rate, and your win streak, under a “Live · Ranked” label and the name of the Act that is running.",
+      "The record and the win rate are for the current Act, and the K/D is over your last ten ranked games. The win streak counts the wins in a row from your newest game, and it shows once there are two; until then the card shows your last game’s RR instead.",
+      "It uses the same HenrikDev key as the rest. The K/D is one more lookup every few minutes, and only while Full is chosen with K/D switched on. You can switch K/D, the win streak, the rating bar and the other parts on or off under Show.",
+    ],
+  },
+  {
     q: "How often does it update?",
     paragraphs: [
       "Every 60 seconds by default, and each update costs two requests from your key. Ranked data only changes when a game ends, so checking faster rarely helps. You can change it under Session, Advanced. If the data service is slow, the widget keeps showing the last numbers it had.",

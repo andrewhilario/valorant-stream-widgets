@@ -13,7 +13,7 @@ const JETT = { id: "jett", name: "Jett" };
 const SAGE = { id: "sage", name: "Sage" };
 
 function game(id: string, agent: { id: string; name: string }, minutes: number, won: boolean | null): MatchSummary {
-  return { id, startedAt: null, lengthMs: minutes * 60_000, agent, won };
+  return { id, startedAt: null, lengthMs: minutes * 60_000, agent, won, kills: null, deaths: null };
 }
 
 describe("buildSnapshot: overall", () => {

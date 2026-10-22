@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHistory, normalizeMmr, parseWhen, ShapeError } from "./henrik-normalize";
+import { normalizeHistory, normalizeMmr, normalizeSeasons, parseWhen, ShapeError } from "./henrik-normalize";
 
 // Shaped after the v3 MMR and v2 MMR-history schemas in docs.henrikdev.xyz.
 const mmr = {
@@ -149,5 +149,29 @@ describe("parseWhen", () => {
     expect(parseWhen(String(ms / 1000))).toBe(ms);
     expect(parseWhen("not a date")).toBeNull();
     expect(parseWhen(undefined)).toBeNull();
+  });
+});
+
+describe("normalizeSeasons and the seasons in a rank lookup", () => {
+  const seasonal = [
+    { season: { id: "ABC-1", short: "V26A5" }, wins: 40, games: 70 },
+    { season: { id: "abc-2", short: "v26a6" }, wins: 134, games: 223, act_wins: [] },
+    { season: { id: "bad-1" }, wins: 5, games: 3 }, // more wins than games: skipped
+    { season: {}, wins: 1, games: 2 }, // no id: skipped
+    { season: { id: "bad-2" }, wins: "7", games: 9 }, // not a count: skipped
+    null,
+  ];
+
+  it("keeps wins and games per season, lower-cased, and skips what is not a plain count", () => {
+    expect(normalizeSeasons(seasonal)).toEqual([
+      { id: "abc-1", short: "v26a5", wins: 40, games: 70 },
+      { id: "abc-2", short: "v26a6", wins: 134, games: 223 },
+    ]);
+    expect(normalizeSeasons(undefined)).toEqual([]);
+  });
+
+  it("comes with a rank lookup", () => {
+    const body = { data: { account: { name: "N", tag: "T" }, current: { tier: { id: 25, name: "Immortal 1" }, rr: 62, last_change: 20 }, peak: null, seasonal } };
+    expect(normalizeMmr(body, { name: "N", tag: "T" }).seasons).toHaveLength(2);
   });
 });

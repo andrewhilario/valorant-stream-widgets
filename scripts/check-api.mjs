@@ -48,6 +48,21 @@ check("data.current.tier.name is a string", typeof has(mmr.json, "data.current.t
 check("data.current.rr is a number", typeof has(mmr.json, "data.current.rr") === "number", String(has(mmr.json, "data.current.rr") ?? ""));
 check("data.current.last_change is a number", typeof has(mmr.json, "data.current.last_change") === "number");
 
+// The Full rank layout names the Act and shows this Act's wins and games, matched to the running Act from valorant-api.com/v1/seasons.
+const seasonal = has(mmr.json, "data.seasonal");
+console.log(`\nSeasons in the rank lookup (the Full layout's Act record)`);
+check("data.seasonal is an array", Array.isArray(seasonal), Array.isArray(seasonal) ? `${seasonal.length} seasons` : "");
+if (Array.isArray(seasonal)) {
+  const rows = seasonal.filter((s) => s?.season?.id).map((s) => `${s.season.short ?? "?"} (${String(s.season.id).slice(0, 8)}…) ${s.wins}W of ${s.games}`);
+  console.log(`  every season: ${rows.join(" | ") || "none"}`);
+  const seasonsRes = await fetch("https://valorant-api.com/v1/seasons").then((r) => r.json()).catch(() => null);
+  const now = Date.now();
+  const running = Array.isArray(seasonsRes?.data) ? seasonsRes.data.find((s) => /::Act$/i.test(String(s.type)) && Date.parse(s.startTime) <= now && now < Date.parse(s.endTime)) : null;
+  console.log(`  the Act running now: ${running ? `${running.displayName} (${String(running.uuid).slice(0, 8)}…)` : "could not be read"}`);
+  const mine = running ? seasonal.find((s) => String(s.season?.id).toLowerCase() === String(running.uuid).toLowerCase()) : null;
+  check("the running Act is in your seasons by id", Boolean(mine), mine ? `${mine.wins}W of ${mine.games} games` : "not by id: the Full layout then tries HenrikDev's short name, and shows 0 and 0 if there is no entry yet");
+}
+
 const history = await call(`/v2/mmr-history/${who}`);
 console.log(`\nGET /v2/mmr-history/${region}/${platform}/…  →  HTTP ${history.res.status}`);
 const list = has(history.json, "data.history");

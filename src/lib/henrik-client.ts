@@ -6,8 +6,8 @@
 
 import { normalizeAgentMastery, normalizeAgentMasteryDetail, type AgentMastery, type MasteryAccount } from "./agent-mastery";
 import { normalizeHistory, normalizeMmr, ShapeError } from "./henrik-normalize";
-import { normalizeMatches } from "./matches";
-import type { RankData, RankError, RankErrorCode, RankResponse } from "./rank-types";
+import { normalizeMatches, summariseKd, type Me } from "./matches";
+import type { KdSummary, RankData, RankError, RankErrorCode, RankResponse } from "./rank-types";
 import type { Platform, Region } from "./riot";
 import { buildSnapshot, type Snapshot } from "./snapshot";
 
@@ -189,4 +189,24 @@ export function fetchAgentMastery(lookup: Lookup, signal?: AbortSignal): Promise
 export function fetchAgentMasteryFor(lookup: Lookup, agentId: string, signal?: AbortSignal): Promise<AgentMasteryResponse> {
   if (!/^[0-9a-fA-F-]{36}$/.test(agentId)) return Promise.resolve(fail("bad_request"));
   return masteryLookup(`/valorant/v1/agent-mastery/${whoOf(lookup)}/${agentId.toLowerCase()}`, lookup, normalizeAgentMasteryDetail, signal);
+}
+
+export type KdResponse = { ok: true; fetchedAt: number; kd: KdSummary } | RankError;
+
+/** The K/D over the player's last ranked games (one request, the same one the calculators use). `me` finds the player among the ten in each match. */
+export async function fetchKd(lookup: Lookup, me: Me, signal?: AbortSignal): Promise<KdResponse> {
+  const key = lookup.key.trim();
+  if (!key) return fail("no_key");
+  if (!looksLikeKey(key)) return fail("bad_key");
+  const { region, platform, name, tag } = lookup;
+  const who = `${region}/${platform}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+  try {
+    const raw = await get(`/valorant/v4/matches/${who}?mode=competitive&size=${MATCH_COUNT}`, key, signal);
+    if (raw.status !== 200) return fail(codeFor(raw.status), raw.retryAfter);
+    return { ok: true, fetchedAt: Date.now(), kd: summariseKd(normalizeMatches(raw.json, me)) };
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    if (err instanceof DOMException && err.name === "AbortError") return fail("upstream");
+    throw err;
+  }
 }

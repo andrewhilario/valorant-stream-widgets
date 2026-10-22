@@ -60,12 +60,18 @@ describe("the lists match the real thing, so nothing can be added without being 
     }
   });
 
-  it("has every layout, and only those", () => {
+  it("has every layout, and only those (each widget has its own; together they are the list)", () => {
+    const seen = new Set<string>();
     for (const widget of Object.values(widgets)) {
       const layout = controlsOf(widget.schema).find((c) => c.key === "layout");
       expect(layout?.kind).toBe("choice");
-      if (layout?.kind === "choice") expect(layout.options.map((o) => o.value).sort()).toEqual([...LAYOUTS].sort());
+      if (layout?.kind !== "choice") continue;
+      for (const option of layout.options) {
+        expect(LAYOUTS as readonly string[]).toContain(option.value);
+        seen.add(option.value);
+      }
     }
+    expect([...seen].sort()).toEqual([...LAYOUTS].sort());
   });
 
   it("has every try-a-game button, and only those", () => {
