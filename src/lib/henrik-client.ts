@@ -4,6 +4,7 @@
 // rate limit instead of sharing one. HenrikDev allows browser requests
 // (access-control-allow-origin: * and the Authorization header).
 
+import { normalizeAgentMastery, normalizeAgentMasteryDetail, type AgentMastery, type MasteryAccount } from "./agent-mastery";
 import { normalizeHistory, normalizeMmr, ShapeError } from "./henrik-normalize";
 import { normalizeMatches } from "./matches";
 import type { RankData, RankError, RankErrorCode, RankResponse } from "./rank-types";
@@ -152,4 +153,40 @@ export async function fetchSnapshot(lookup: Lookup, signal?: AbortSignal): Promi
 
   const matches = raw && raw.status === 200 ? normalizeMatches(raw.json, rank.account) : null;
   return { ok: true, snapshot: buildSnapshot(rank, matches) };
+}
+
+export type MasteryResponse = { ok: true; fetchedAt: number; account: MasteryAccount; agents: AgentMastery[] } | RankError;
+export type AgentMasteryResponse = { ok: true; fetchedAt: number; account: MasteryAccount; agent: AgentMastery } | RankError;
+
+/** The shared flow of the two mastery lookups: checks the key, asks, and turns what came back into a typed answer. */
+async function masteryLookup<T>(path: string, lookup: Lookup, read: (json: unknown) => T, signal?: AbortSignal): Promise<({ ok: true; fetchedAt: number } & T) | RankError> {
+  const key = lookup.key.trim();
+  if (!key) return fail("no_key");
+  if (!looksLikeKey(key)) return fail("bad_key");
+  try {
+    const raw = await get(path, key, signal);
+    if (raw.status !== 200) return fail(codeFor(raw.status), raw.retryAfter);
+    return { ok: true, fetchedAt: Date.now(), ...read(raw.json) };
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    if (err instanceof ShapeError) return fail("upstream_shape");
+    if (err instanceof DOMException && err.name === "AbortError") return fail("upstream");
+    throw err;
+  }
+}
+
+const whoOf = ({ region, platform, name, tag }: Lookup) => `${region}/${platform}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`;
+
+/**
+ * Every agent's Mastery for an account: one request to HenrikDev's agent-mastery endpoint (added in its v4.10.0, still BETA, so it can change or
+ * fail with a 500 while it is). It reports levels, not Mastery Points; see agent-mastery.ts.
+ */
+export function fetchAgentMastery(lookup: Lookup, signal?: AbortSignal): Promise<MasteryResponse> {
+  return masteryLookup(`/valorant/v1/agent-mastery/${whoOf(lookup)}`, lookup, normalizeAgentMastery, signal);
+}
+
+/** One agent's Mastery (by the agent's id, as valorant-api.com gives it), with the stat modules when Riot sends them. */
+export function fetchAgentMasteryFor(lookup: Lookup, agentId: string, signal?: AbortSignal): Promise<AgentMasteryResponse> {
+  if (!/^[0-9a-fA-F-]{36}$/.test(agentId)) return Promise.resolve(fail("bad_request"));
+  return masteryLookup(`/valorant/v1/agent-mastery/${whoOf(lookup)}/${agentId.toLowerCase()}`, lookup, normalizeAgentMasteryDetail, signal);
 }

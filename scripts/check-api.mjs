@@ -79,5 +79,35 @@ if (Array.isArray(games) && games[0]) {
   check("the newest match also appears in the RR history (they are joined on match_id)", inHistory, inHistory ? "" : "per-agent RR averages will be empty");
 }
 
+// Agent Mastery (HenrikDev v4.10.0, still marked BETA): what it gives for this account. It reports LEVELS per agent, not Mastery Points, and the schema
+// does not say which track is the Act Level and which the Lifetime Level, so this prints what really comes back. Nothing in the output is secret; paste
+// this part into the chat to settle it. A problem here does not fail the whole check: a beta endpoint may be missing or erroring.
+const mastery = await call(`/v1/agent-mastery/${who}`);
+console.log(`\nGET /v1/agent-mastery/${region}/${platform}/…  →  HTTP ${mastery.res.status}  (beta)`);
+const agents = has(mastery.json, "data.agents");
+const note = (label, good, detail = "") => console.log(`  ${good ? "ok  " : "note"} ${label}${detail ? ` — ${detail}` : ""}`);
+note("status 200", mastery.res.status === 200, mastery.res.status === 500 ? "HenrikDev says it could not fetch or parse the mastery (it is a beta)" : mastery.res.status === 404 ? "account not found" : mastery.res.status === 401 ? "the key was rejected" : "");
+note("data.agents is an array", Array.isArray(agents), Array.isArray(agents) ? `${agents.length} agents` : "");
+if (Array.isArray(agents) && agents.length) {
+  const top = (a) => Math.max(0, ...(a.tracks ?? []).map((tr) => (typeof tr.level === "number" ? tr.level : 0)));
+  const played = agents.filter((a) => top(a) > 0).sort((a, b) => top(b) - top(a));
+  const trackIds = new Map();
+  for (const a of agents) for (const tr of a.tracks ?? []) trackIds.set(tr.id, tr.name ?? null);
+  console.log(`  tracks seen across all agents (id → name): ${[...trackIds].map(([id, n]) => `${String(id).slice(0, 8)}… → ${n ?? "no name"}`).join(" | ") || "none"}`);
+  console.log(`  ${played.length} agents have a level above 0. The highest, as: agent · each track (name or id = level) · flourish short/long`);
+  for (const a of played.slice(0, 6)) {
+    const tracks = (a.tracks ?? []).map((tr) => `${tr.name ?? String(tr.id).slice(0, 8)}=${tr.level ?? "null"}`).join(", ");
+    console.log(`    ${a.agent?.name ?? a.agent?.id} · ${tracks} · ${a.flourish?.short_level ?? "null"}/${a.flourish?.long_level ?? "null"}`);
+  }
+  const first = played[0] ?? agents[0];
+  if (first?.agent?.id) {
+    const one = await call(`/v1/agent-mastery/${who}/${first.agent.id}`);
+    console.log(`\nGET /v1/agent-mastery/${region}/${platform}/…/${first.agent.name ?? "agent"}  →  HTTP ${one.res.status}`);
+    const modules = has(one.json, "data.mastery.modules");
+    note("modules", Array.isArray(modules), Array.isArray(modules) ? `${modules.length} stat modules` : "none sent");
+    if (Array.isArray(modules)) for (const m of modules.slice(0, 12)) console.log(`    ${m.stat?.name ?? m.stat?.id} (${m.name ?? m.id ?? "no name"}) = ${m.value}`);
+  }
+}
+
 console.log(failed ? "\nSomething didn't match. Compare with https://docs.henrikdev.xyz and src/lib/henrik-normalize.ts and src/lib/matches.ts.\n" : "\nAll good: the shapes match what the app reads.\n");
 process.exit(failed ? 1 : 0);
