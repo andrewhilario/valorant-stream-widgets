@@ -179,6 +179,18 @@ describe("module flags", () => {
     const strip = readConfig({ ...defaults, layout: "strip" });
     expect(flagVisible(strip, "gl")).toBe(false);
   });
+
+  it("gives Full and Full stack the same modules, and keeps the session ones out", () => {
+    for (const layout of ["full", "fullstack"]) {
+      const config = readConfig({ ...defaults, layout });
+      expect(config.layout).toBe(layout);
+      for (const flag of ["progress", "last", "rec", "wr", "kd", "streak"]) expect(flagVisible(config, flag)).toBe(true);
+      for (const flag of ["peak", "net", "gl"]) expect(flagVisible(config, flag)).toBe(false);
+    }
+    expect(sanitizeValue(control("layout"), "fullstack")).toBe("fullstack");
+    // K/D and the streak are drawn by the Full layouts only.
+    expect(flagVisible(readConfig({ ...defaults, layout: "stack" }), "kd")).toBe(false);
+  });
 });
 
 describe("presets", () => {

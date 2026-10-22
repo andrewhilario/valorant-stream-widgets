@@ -192,7 +192,7 @@ export function RankWidget({ config, data, icons, now, ready, reaction = null, k
     [data, config.sessionMode, config.gap, config.windowHours, now],
   );
 
-  const full = config.layout === "full";
+  const full = config.layout === "full" || config.layout === "fullstack";
   const record = useMemo(() => actRecord(data?.seasons, act), [data, act]);
   const streak = useMemo(() => currentStreak(data?.history ?? []), [data]);
 

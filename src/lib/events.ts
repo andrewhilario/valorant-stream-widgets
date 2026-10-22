@@ -15,7 +15,7 @@ export const WIDGETS = ["valorant-rank", "valorant-mastery"] as const;
 /** The theme ids in widgets/valorant-rank/themes.ts. */
 export const THEMES = ["tactical", "clean", "paper"] as const;
 /** The layout ids both widgets offer. */
-export const LAYOUTS = ["card", "strip", "badge", "stack", "full"] as const;
+export const LAYOUTS = ["card", "strip", "badge", "stack", "full", "fullstack"] as const;
 /** The "Try a game" and "Try a match" buttons. */
 export const TRYOUTS = ["win", "loss", "up", "down", "mp_gain", "level_up", "target_reached"] as const;
 

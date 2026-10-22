@@ -52,14 +52,14 @@ export const overlayFaq: FaqItem[] = [
   {
     q: "Does it work for vertical streams like TikTok LIVE?",
     paragraphs: [
-      "Yes. Switch the preview to Vertical to place the widget on a 1080 × 1920 canvas, and try the Stack layout, which is tall and narrow.",
+      "Yes. Switch the preview to Vertical to place the widget on a 1080 × 1920 canvas, and try the Stack layout, which is tall and narrow. The Full stack layout is the same, with the K/D, this Act's record and your win streak.",
       "In OBS, set the base and output resolution to 1080 × 1920 under Settings, Video, then add the Browser Source as usual. In TikTok LIVE Studio, add a Link source and paste the same link.",
     ],
   },
   {
     q: "What does the Full layout show?",
     paragraphs: [
-      "Full is the big card: your rank with its badge, the rank rating bar, then K/D, your win–loss record and win rate, and your win streak, under a “Live · Ranked” label and the name of the Act that is running.",
+      "Full is the big card: your rank with its badge, the rank rating bar, then K/D, your win–loss record and win rate, and your win streak, under a “Live · Ranked” label and the name of the Act that is running. Full stack is the same card, tall and narrow, for vertical streams like TikTok LIVE.",
       "The record and the win rate are for the current Act, and the K/D is over your last ten ranked games. The win streak counts the wins in a row from your newest game, and it shows once there are two; until then the card shows your last game’s RR instead.",
       "It uses the same HenrikDev key as the rest. The K/D is one more lookup every few minutes, and only while Full is chosen with K/D switched on. You can switch K/D, the win streak, the rating bar and the other parts on or off under Show.",
     ],

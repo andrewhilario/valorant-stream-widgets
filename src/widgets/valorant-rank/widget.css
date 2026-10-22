@@ -995,17 +995,18 @@ body {
 }
 
 /* ── Full: the big card ─────────────────────────────────────────────────────
+   (data-layout^="full" is both Full and Full stack; the tall one is overridden at the end of this block.)
    A live badge and the Act on top, the rank with a big badge, a rating bar, then K/D, W/L and win rate, and a win streak. The glow
    is a drop-shadow on .w itself (not the panel), so it follows the panel's cut corners instead of being clipped by them; the
    padding gives it room, and counts in the size OBS needs. Plain colours, gradients and a filter only. */
 
-.w[data-layout="full"] {
+.w[data-layout^="full"] {
   width: 39em;
   padding: 1.5em;
   filter: drop-shadow(0 0 1.1em var(--w-tier-glow));
 }
 
-.w[data-layout="full"] .w__panel {
+.w[data-layout^="full"] .w__panel {
   padding: 0;
   background:
     linear-gradient(var(--w-grid) 1px, transparent 1px) 0 0 / 2.4em 2.4em,
@@ -1046,7 +1047,7 @@ body {
   white-space: nowrap;
 }
 
-.w[data-layout="full"] .w__head {
+.w[data-layout^="full"] .w__head {
   grid-template-columns: auto minmax(0, 1fr);
   column-gap: 1.8em;
   padding: 1.1em 1.6em 1.5em;
@@ -1058,8 +1059,8 @@ body {
   height: 8.5em;
 }
 
-.w[data-layout="full"] .w__badge img,
-.w[data-layout="full"] .w__glyph {
+.w[data-layout^="full"] .w__badge img,
+.w[data-layout^="full"] .w__glyph {
   filter: drop-shadow(0 0 1em var(--w-tier-glow));
 }
 
@@ -1073,20 +1074,20 @@ body {
   color: var(--w-muted);
 }
 
-.w[data-layout="full"] .w__tier {
+.w[data-layout^="full"] .w__tier {
   font-size: calc(var(--w-tier-size) * 1.65);
   color: var(--w-tier);
 }
 
-.w[data-layout="full"] .w__rr {
+.w[data-layout^="full"] .w__rr {
   display: none;
 }
 
-.w[data-layout="full"] .w__progress {
+.w[data-layout^="full"] .w__progress {
   margin-top: 1.1em;
 }
 
-.w[data-layout="full"] .w__pmeta--top {
+.w[data-layout^="full"] .w__pmeta--top {
   align-items: baseline;
   margin: 0 0 0.65em;
   font-size: 0.78em;
@@ -1094,15 +1095,15 @@ body {
   text-transform: uppercase;
 }
 
-.w[data-layout="full"] .w__progress .w__pmeta--top {
+.w[data-layout^="full"] .w__progress .w__pmeta--top {
   margin-bottom: 0.65em;
 }
 
-.w[data-layout="full"] .w__track {
+.w[data-layout^="full"] .w__track {
   height: 0.75em;
 }
 
-.w[data-layout="full"] .w__stats {
+.w[data-layout^="full"] .w__stats {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
@@ -1111,26 +1112,26 @@ body {
   border-top: var(--w-line) solid var(--w-border);
 }
 
-.w[data-layout="full"] .w__stat,
-.w[data-layout="full"] .w__stat:first-child,
-.w[data-layout="full"] .w__stat:last-child {
+.w[data-layout^="full"] .w__stat,
+.w[data-layout^="full"] .w__stat:first-child,
+.w[data-layout^="full"] .w__stat:last-child {
   padding: 1.1em 0.6em 1.15em;
   text-align: center;
 }
 
-.w[data-layout="full"] .w__stat dt {
+.w[data-layout^="full"] .w__stat dt {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.55em;
 }
 
-.w[data-layout="full"] .w__stat dd {
+.w[data-layout^="full"] .w__stat dd {
   margin-top: 0.5em;
   font-size: calc(var(--w-lead-size) * 1.05);
 }
 
-.w[data-layout="full"] .w__sub {
+.w[data-layout^="full"] .w__sub {
   margin-top: 0.4em;
 }
 
@@ -1171,4 +1172,80 @@ body {
 
 .w__foot .w__icon {
   color: var(--w-tier);
+}
+
+/* ── Full stack: the same card, tall and narrow, for vertical (9:16) streams ────────────────────────────────────────────
+   Everything above applies; this stacks it: the badge on top, the rank under it, the three tiles as rows (label left, value
+   right, a hairline between), and the foot as before. */
+
+.w[data-layout="fullstack"] {
+  width: 21em;
+}
+
+.w[data-layout="fullstack"] .w__top {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6em 1em;
+  padding: 1.1em 1.2em 0;
+  text-align: center;
+}
+
+.w[data-layout="fullstack"] .w__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9em;
+  padding: 1.1em 1.4em 1.4em;
+  text-align: center;
+  background: radial-gradient(ellipse 80% 55% at 50% 22%, var(--w-tier-soft), transparent 72%);
+}
+
+.w[data-layout="fullstack"] .w__badge--hero {
+  width: 7.5em;
+  height: 7.5em;
+}
+
+.w[data-layout="fullstack"] .w__rank {
+  width: 100%;
+}
+
+.w[data-layout="fullstack"] .w__tier {
+  font-size: calc(var(--w-tier-size) * 1.45);
+}
+
+.w[data-layout="fullstack"] .w__progress {
+  margin-top: 1em;
+}
+
+.w[data-layout="fullstack"] .w__stats {
+  display: block;
+}
+
+.w[data-layout="fullstack"] .w__stat,
+.w[data-layout="fullstack"] .w__stat:first-child,
+.w[data-layout="fullstack"] .w__stat:last-child {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 1em;
+  padding: 0.85em 1.4em 0.9em;
+  text-align: left;
+}
+
+.w[data-layout="fullstack"] .w__stat + .w__stat {
+  border-top: var(--w-line) solid var(--w-border);
+}
+
+.w[data-layout="fullstack"] .w__stat dt {
+  justify-content: flex-start;
+}
+
+.w[data-layout="fullstack"] .w__stat dd {
+  margin: 0;
+  text-align: right;
+  font-size: calc(var(--w-lead-size) * 0.95);
+}
+
+.w[data-layout="fullstack"] .w__sub {
+  margin: 0.3em 0 0;
 }

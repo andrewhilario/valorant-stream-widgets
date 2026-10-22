@@ -324,11 +324,11 @@ export function Stage() {
         </div>
       </div>
 
-      {pg.format === "vertical" && pg.config.layout !== "stack" && (
+      {pg.format === "vertical" && pg.config.layout !== "stack" && pg.config.layout !== "fullstack" && (
         <p className="stage__hint">
-          Vertical streams suit the Stack layout.{" "}
-          <button type="button" className="linkbtn linkbtn--sm" onClick={() => pg.set("layout", "stack")}>
-            Use Stack
+          Vertical streams suit the {pg.config.layout === "full" ? "Full stack" : "Stack"} layout.{" "}
+          <button type="button" className="linkbtn linkbtn--sm" onClick={() => pg.set("layout", pg.config.layout === "full" ? "fullstack" : "stack")}>
+            Use {pg.config.layout === "full" ? "Full stack" : "Stack"}
           </button>
         </p>
       )}

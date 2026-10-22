@@ -21,7 +21,7 @@ export default function Home() {
             featureList: [
               "Live Valorant rank, RR and peak rank",
               "Session stats worked out from match history",
-              "Five layouts, including a tall one for vertical streams and a big Full card with K/D, this Act's record and your win streak",
+              "Six layouts, including tall ones for vertical streams and a big Full card with K/D, this Act's record and your win streak",
               "Theme gallery that tries each look on your live preview",
               "Short, subtle reactions to wins, losses and rank changes",
               "Live preview on a landscape or vertical canvas",

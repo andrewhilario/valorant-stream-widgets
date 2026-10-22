@@ -49,7 +49,7 @@ export function RankRuntime() {
 
   const cfg = useMemo(() => readConfig(config ?? defaults), [config]);
 
-  const full = cfg.layout === "full";
+  const full = cfg.layout === "full" || cfg.layout === "fullstack";
   const { data, status, now, kd, act } = useRankData({
     riotId: cfg.riotId,
     region: cfg.region,

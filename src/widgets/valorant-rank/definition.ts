@@ -17,7 +17,7 @@ import {
 export const WIDGET_ID = "valorant-rank";
 export const WIDGET_NAME = "Valorant rank overlay";
 
-export type Layout = "card" | "strip" | "badge" | "stack" | "full";
+export type Layout = "card" | "strip" | "badge" | "stack" | "full" | "fullstack";
 
 export type RankConfig = {
   riotId: string;
@@ -43,21 +43,21 @@ export type RankConfig = {
   refresh: number;
 };
 
-const LAYOUT_LABELS: Record<Layout, string> = { card: "Card", strip: "Strip", badge: "Badge", stack: "Stack", full: "Full" };
+const LAYOUT_LABELS: Record<Layout, string> = { card: "Card", strip: "Strip", badge: "Badge", stack: "Stack", full: "Full", fullstack: "Full stack" };
 export const layoutLabel = (layout: string) => LAYOUT_LABELS[layout as Layout] ?? "Card";
 
 /** Which layouts draw each module. The inspector greys out the rest, with a reason. */
 const FLAG_LAYOUTS: Record<string, Layout[]> = {
   peak: ["card", "stack"],
-  progress: ["card", "strip", "badge", "stack", "full"],
-  last: ["card", "strip", "badge", "stack", "full"],
+  progress: ["card", "strip", "badge", "stack", "full", "fullstack"],
+  last: ["card", "strip", "badge", "stack", "full", "fullstack"],
   net: ["card", "strip", "stack"],
   gl: ["card", "stack"],
-  // In Full these are the Act's record and win rate; in the others, this session's.
-  rec: ["card", "strip", "stack", "full"],
-  wr: ["card", "strip", "stack", "full"],
-  kd: ["full"],
-  streak: ["full"],
+  // In Full (and Full stack) these are the Act's record and win rate; in the others, this session's.
+  rec: ["card", "strip", "stack", "full", "fullstack"],
+  wr: ["card", "strip", "stack", "full", "fullstack"],
+  kd: ["full", "fullstack"],
+  streak: ["full", "fullstack"],
 };
 
 const appliesTo = (flag: string) => (config: Config) => FLAG_LAYOUTS[flag].includes(config.layout as Layout);
@@ -162,14 +162,15 @@ export const sections: Section[] = [
         key: "layout",
         param: "l",
         label: "Layout",
-        help: "Card shows your session. Strip is one line. Badge is rank and RR only. Stack is tall and narrow, for vertical streams. Full is the big one: rank, rating bar, K/D, this Act's record and win rate, and your win streak.",
-        keywords: ["card", "strip", "badge", "stack", "full", "big", "vertical", "tiktok", "portrait", "compact", "shape", "arrangement", "kd", "streak", "act", "episode"],
+        help: "Card shows your session. Strip is one line. Badge is rank and RR only. Stack is tall and narrow, for vertical streams. Full is the big one: rank, rating bar, K/D, this Act's record and win rate, and your win streak. Full stack is the same card, tall and narrow, for vertical streams.",
+        keywords: ["card", "strip", "badge", "stack", "full", "fullstack", "big", "tall", "vertical", "tiktok", "portrait", "compact", "shape", "arrangement", "kd", "streak", "act", "episode"],
         options: [
           { value: "card", label: "Card" },
           { value: "strip", label: "Strip" },
           { value: "badge", label: "Badge" },
           { value: "stack", label: "Stack" },
           { value: "full", label: "Full" },
+          { value: "fullstack", label: "Full stack" },
         ],
         default: "card",
       },
