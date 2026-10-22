@@ -3,8 +3,11 @@
 //
 // What the endpoint gives, per agent: its `tracks` (an id, an optional name and a `level` for each), the `flourish` levels (short and long),
 // the equipped `customization`, and, on the single-agent endpoint only, numeric `modules` (stat id, name and value). What it does NOT give is
-// Mastery Points or how far through a level the player is, so the calculators still need those typed. The schema does not say which track is
-// the Act Level and which the Lifetime Level, and a track's `name` may be null: nothing here guesses, it passes the tracks on as they came.
+// Mastery Points or how far through a level the player is, so the calculators still need those typed. The schema does not say which level is the Act
+// Level and which the Lifetime Level, and a track's `name` may be null. A real account (checked 2026-10-22, 29 agents) settled it by its pattern: each
+// agent has ONE track, nameless, whose level always equals `flourish.long_level`; `flourish.short_level` is smaller, or absent (null) for an agent not
+// played this Act. That is the Act Level / Lifetime Level pair (an Act Level resets every Act, a Lifetime Level only grows), so `levelsOf` reads
+// short = Act and long = Lifetime, and an omitted level is 0. The tracks themselves are still passed on as they came.
 
 import { ShapeError } from "./henrik-normalize";
 
@@ -87,4 +90,15 @@ export function normalizeAgentMasteryDetail(json: unknown): { account: MasteryAc
 export function playedAgents(agents: AgentMastery[]): AgentMastery[] {
   const top = (a: AgentMastery) => Math.max(0, ...a.tracks.map((t) => t.level ?? 0));
   return agents.filter((a) => top(a) > 0).sort((x, y) => top(y) - top(x) || (x.agentName ?? x.agentId).localeCompare(y.agentName ?? y.agentId));
+}
+
+/**
+ * The two levels the calculators ask for. `act` is the Act Level (flourish short_level), `lifetime` the Lifetime Level (flourish long_level, else the
+ * track's level); a level HenrikDev left out is 0 (Riot's data leaves out a zero). Never below the Act Level for the lifetime: it counts every Act.
+ */
+export function levelsOf(entry: AgentMastery): { act: number; lifetime: number } {
+  const act = Math.max(0, entry.flourish.short ?? 0);
+  const track = Math.max(0, ...entry.tracks.map((t) => t.level ?? 0));
+  const lifetime = Math.max(act, entry.flourish.long ?? track);
+  return { act, lifetime };
 }

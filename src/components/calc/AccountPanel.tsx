@@ -3,7 +3,7 @@
 import { LoaderCircle } from "lucide-react";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { loadAccount, saveAccount } from "@/lib/account-store";
-import { looksLikeKey } from "@/lib/henrik-client";
+import { looksLikeKey, type Lookup } from "@/lib/henrik-client";
 import { guessRegion, parseRiotId, type Platform, type Region } from "@/lib/riot";
 import { controlsOf, type ChoiceControl, type TextControl } from "@/lib/schema";
 import type { Snapshot } from "@/lib/snapshot";
@@ -22,9 +22,18 @@ const PLATFORM = find<ChoiceControl>("platform");
 
 /**
  * "Use my recent ranked games": the streamer's own HenrikDev key, straight from this browser to HenrikDev.
- * `onLoaded` receives the result and may return one more sentence to show (for example, why a rank wasn't filled in).
+ * `onLoaded` receives the result (and the lookup that made it, in case it needs another request) and may return one more sentence to show (for
+ * example, why a rank wasn't filled in), at once or once that request is done. `intro` replaces the sentence at the top of the panel.
  */
-export function AccountPanel({ onLoaded, summary }: { onLoaded: (snapshot: Snapshot) => string | null; summary: string }) {
+export function AccountPanel({
+  onLoaded,
+  summary,
+  intro = "Fills in numbers from your last ranked games.",
+}: {
+  onLoaded: (snapshot: Snapshot, lookup: Lookup) => string | null | Promise<string | null>;
+  summary: string;
+  intro?: string;
+}) {
   const id = useId();
   const [riotId, setRiotId] = useState("");
   const [region, setRegion] = useState<Region>("na");
@@ -68,10 +77,11 @@ export function AccountPanel({ onLoaded, summary }: { onLoaded: (snapshot: Snaps
       return;
     }
     setFollow(null);
-    const snapshot = await load({ region, platform, name: parsed.name, tag: parsed.tag, key: key.trim() });
+    const lookup: Lookup = { region, platform, name: parsed.name, tag: parsed.tag, key: key.trim() };
+    const snapshot = await load(lookup);
     if (!snapshot) return;
     saveAccount({ riotId: riotId.trim(), region, platform, key: key.trim() });
-    setFollow(onLoaded(snapshot));
+    setFollow(await onLoaded(snapshot, lookup));
   }
 
   const loading = state.phase === "loading";
@@ -107,8 +117,7 @@ export function AccountPanel({ onLoaded, summary }: { onLoaded: (snapshot: Snaps
       <summary>{summary}</summary>
       <form className="lookup__body" onSubmit={submit} noValidate>
         <p className="lookup__intro">
-          Fills in numbers from your last ranked games. Your key stays in this browser and goes straight to HenrikDev, not through this
-          site.
+          {intro} Your key stays in this browser and goes straight to HenrikDev, not through this site.
         </p>
         <TextField control={RIOT_ID} value={riotId} onChange={edit(setRiotId)} lookup={lookup} />
         <Segmented control={REGION} value={region} onChange={edit((v: string) => setRegion(v as Region))} />

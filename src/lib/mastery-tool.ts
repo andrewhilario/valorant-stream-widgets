@@ -1,6 +1,7 @@
 // The Agent Mastery calculator's form, turned into something a screen can show. No React in here,
 // so the numbers and the wording of every state can be tested.
 
+import { levelsOf, type AgentMastery } from "./agent-mastery";
 import { parseField, type FieldRule } from "./fields";
 import {
   forecastMastery,
@@ -180,5 +181,20 @@ export function evaluateMastery(form: MasteryForm): MasteryView {
     accents: PORTRAIT_ACCENT_LEVELS.filter((l) => l > input.currentLevel && l <= input.targetLevel),
     milestones: milestonesBetween(from, to),
     lifetime: { from, to, assumed },
+  };
+}
+
+/**
+ * What one agent's Mastery from the player's account fills into the form: the Act Level and the Lifetime Level, never the MP into the level (the data
+ * service does not send it), with a sentence saying so. The Act Level is kept under the top (30), where the form's own limit is.
+ */
+export function masteryFill(entry: AgentMastery, agentName: string | null): { patch: Partial<MasteryForm>; text: string } {
+  const { act, lifetime } = levelsOf(entry);
+  const level = Math.min(act, MAX_LEVEL - 1);
+  const who = agentName ?? entry.agentName ?? "this agent";
+  const started = act === 0 && lifetime > 0 ? " (no Act Level yet this Act)" : "";
+  return {
+    patch: { level: String(level), lifetime: String(lifetime) },
+    text: `From your account, on ${who}: Act Level ${level}${started}, Lifetime Level ${lifetime}. The data service doesn’t send the MP you have toward the next level, so type that from the Mastery screen in the game.`,
   };
 }

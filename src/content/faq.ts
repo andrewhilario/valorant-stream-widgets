@@ -176,8 +176,9 @@ export const masteryFaq: FaqItem[] = [
   {
     q: "Can the calculator see my Mastery progress?",
     paragraphs: [
-      "No. The data service this site uses has no Mastery information, so you enter your Act Level and the MP you’ve earned toward the next one from the Mastery screen in the game.",
-      "“Use my recent ranked games” fills in your win rate, and your match length for the modes that play like ranked (Competitive, Unrated and Premier), from your last ranked games, and nothing more.",
+      "Partly. With “Use my account” and a free HenrikDev key of your own, it fills in your Act Level and your Lifetime Level for the agent you pick. HenrikDev doesn’t send the Mastery Points you have toward the next level, so you still enter that from the Mastery screen in the game.",
+      "HenrikDev’s Mastery lookup is still a beta on their side, so it can fail or change. Typing your numbers always works, and no key is needed for that.",
+      "The same button also fills in your win rate, and your match length for the modes that play like ranked (Competitive, Unrated and Premier), from your last ranked games.",
     ],
   },
   {

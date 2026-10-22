@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateMastery, MASTERY_EXAMPLE, type MasteryField, type MasteryForm } from "./mastery-tool";
+import { evaluateMastery, MASTERY_EXAMPLE, masteryFill, type MasteryField, type MasteryForm } from "./mastery-tool";
 
 const form = (over: Partial<MasteryForm> = {}): MasteryForm => ({ ...MASTERY_EXAMPLE, ...over });
 
@@ -193,5 +193,42 @@ describe("evaluateMastery: validation", () => {
   it("reports every bad field at once", () => {
     const errors = errorsFor({ level: "x", mpInto: "x", target: "x", minutes: "x", winRate: "x", bonus: "x" });
     expect(Object.keys(errors).sort()).toEqual(["bonus", "level", "minutes", "mpInto", "target", "winRate"]);
+  });
+});
+
+describe("masteryFill: an agent's levels from the account", () => {
+  const entry = (short: number | null, long: number | null, name: string | null = "Clove") => ({
+    agentId: "1dbf2edd-4729-0984-3115-daa5eed44993",
+    agentName: name,
+    tracks: [{ id: "t", name: null, level: long }],
+    flourish: { short, long },
+    modules: null,
+  });
+
+  it("fills the Act Level and the Lifetime Level, and says the MP into the level is not in the data", () => {
+    const { patch, text } = masteryFill(entry(5, 16), "Clove");
+    expect(patch).toEqual({ level: "5", lifetime: "16" });
+    expect(text).toContain("Act Level 5");
+    expect(text).toContain("Lifetime Level 16");
+    expect(text).toMatch(/type that from the Mastery screen/);
+    expect(patch).not.toHaveProperty("mpInto");
+  });
+
+  it("says when there is no Act Level yet this Act, and names the agent from the entry when none is given", () => {
+    const { patch, text } = masteryFill(entry(null, 3, "Jett"), null);
+    expect(patch).toEqual({ level: "0", lifetime: "3" });
+    expect(text).toContain("on Jett");
+    expect(text).toContain("no Act Level yet this Act");
+  });
+
+  it("keeps the Act Level under the form's own limit", () => {
+    expect(masteryFill(entry(40, 44), "Clove").patch.level).toBe("29");
+  });
+
+  it("fills a form that then works out an estimate", () => {
+    const { patch } = masteryFill(entry(5, 16), "Clove");
+    const view = evaluateMastery({ ...MASTERY_EXAMPLE, ...patch, mpInto: "1000", target: "10" });
+    expect(view.kind).toBe("ok");
+    if (view.kind === "ok") expect([view.input.currentLevel, view.lifetime.from]).toEqual([5, 16]);
   });
 });

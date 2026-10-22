@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { AgentMastery } from "@/lib/agent-mastery";
 import { daysText, dec, hoursText, int, list } from "@/lib/format";
+import { fetchAgentMastery, type Lookup } from "@/lib/henrik-client";
 import { creditRange, mpForLevel } from "@/lib/mastery";
 import {
   evaluateMastery,
   MASTERY_EXAMPLE,
+  masteryFill,
   type MasteryErrors,
   type MasteryField,
   type MasteryForm,
@@ -70,6 +73,9 @@ export function MasteryCalculator() {
   const [agentId, setAgentId] = useState("");
   const [source, setSource] = useState<Source>({ kind: "example" });
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  // Every agent's Mastery from the account, once loaded, and the sentence saying where the levels now in the form came from.
+  const [mastery, setMastery] = useState<AgentMastery[] | null>(null);
+  const [masteryNote, setMasteryNote] = useState<string | null>(null);
 
   // The agent list is a 20 KiB download that isn't needed to show the first result, so it waits: until you first
   // touch the form, or your games load, or a few seconds pass, whichever comes first.
@@ -84,7 +90,23 @@ export function MasteryCalculator() {
   const edited = <K extends keyof MasteryForm>(key: K) => (value: MasteryForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
     setSource({ kind: "edited" });
+    if (key === "level" || key === "lifetime") setMasteryNote(null); // typed over: the sentence about where they came from is no longer true
   };
+
+  /** Puts the chosen agent's Act Level and Lifetime Level (from the account) in the form. Does nothing if the account has no entry for it. */
+  function applyMastery(list: AgentMastery[] | null, chosen: string, name: string | null) {
+    const entry = list?.find((a) => a.agentId === chosen.toLowerCase());
+    if (!entry) return false;
+    const { patch, text } = masteryFill(entry, name);
+    setForm((f) => ({ ...f, ...patch }));
+    setMasteryNote(text);
+    return true;
+  }
+  function pickAgent(id: string) {
+    setAgentId(id);
+    setMasteryNote(null);
+    if (mastery && id) applyMastery(mastery, id, agents.find((a) => a.id === id)?.name ?? null);
+  }
 
   const agent = agents.find((a) => a.id === agentId) ?? null;
   const agentName = agent?.name ?? null;
@@ -97,6 +119,19 @@ export function MasteryCalculator() {
     const mode = modeById(id);
     setForm((f) => ({ ...f, mode: mode.id, minutes: round1(defaultMinutes(mode, rankedAverage)) }));
     setSource({ kind: "edited" });
+  }
+
+  async function fromAccount(s: Snapshot, lookup: Lookup): Promise<string | null> {
+    const note = fromGames(s, agentId);
+    const levels = await fetchAgentMastery(lookup);
+    if (!levels.ok) {
+      setMastery(null);
+      return `${note ? `${note} ` : ""}Your Agent Mastery levels couldn’t be read (HenrikDev’s Mastery lookup is still a beta), so type your Act Level.`;
+    }
+    setMastery(levels.agents);
+    if (!agentId) return `${note ? `${note} ` : ""}Pick your agent below and its Act Level and Lifetime Level fill in.`;
+    const filled = applyMastery(levels.agents, agentId, agent?.name ?? null);
+    return `${note ? `${note} ` : ""}${filled ? "Your levels for this agent are filled in." : "HenrikDev has no Mastery for that agent on this account, so type your Act Level."}`;
   }
 
   function fromGames(s: Snapshot, chosen: string): string | null {
@@ -142,7 +177,11 @@ export function MasteryCalculator() {
   return (
     <div className="calc" id="calculator">
       <div className="calc__form" onFocusCapture={() => setWantAgents(true)} onPointerDownCapture={() => setWantAgents(true)}>
-        <AccountPanel summary="Use my recent ranked games" onLoaded={(s) => fromGames(s, agentId)} />
+        <AccountPanel
+          summary="Use my account: games and Agent Mastery levels"
+          intro="Fills in numbers from your last ranked games, and your Act Level and Lifetime Level for the agent you pick."
+          onLoaded={fromAccount}
+        />
 
         <div className="calc__group" role="group" aria-labelledby="level-title">
           <h2 className="calc__title" id="level-title">
@@ -179,6 +218,11 @@ export function MasteryCalculator() {
               ctl="lifetime"
             />
           </div>
+          {masteryNote && (
+            <p className="calc__note" role="status">
+              {masteryNote}
+            </p>
+          )}
         </div>
 
         <div className="calc__group" role="group" aria-labelledby="play-title">
@@ -201,7 +245,7 @@ export function MasteryCalculator() {
                 agents={agents}
                 status={agentsStatus}
                 value={agentId}
-                onChange={setAgentId}
+                onChange={pickAgent}
                 onRetry={retryAgents}
                 help="Names your result. Load your games to use this agent’s numbers."
               />

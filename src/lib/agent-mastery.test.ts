@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeAgentMastery, normalizeAgentMasteryDetail, playedAgents } from "./agent-mastery";
+import { levelsOf, normalizeAgentMastery, normalizeAgentMasteryDetail, playedAgents } from "./agent-mastery";
 import { fetchAgentMastery, fetchAgentMasteryFor, type Lookup } from "./henrik-client";
 import { ShapeError } from "./henrik-normalize";
 
@@ -208,5 +208,45 @@ describe("fetchAgentMasteryFor", () => {
     expect(await fetchAgentMasteryFor(lookup, JETT)).toMatchObject({ ok: false, code: "not_found" });
     vi.stubGlobal("fetch", vi.fn(async () => reply(400, {})));
     expect(await fetchAgentMasteryFor(lookup, JETT)).toMatchObject({ ok: false, code: "bad_request" });
+  });
+});
+
+// What a real account returned on 2026-10-22 (read from `npm run check:api`; levels only, nothing private): every agent has one nameless track whose
+// level equals flourish.long_level, and flourish.short_level is smaller or null.
+const real = (agent: string, track: string, level: number | null, short: number | null, long: number | null) => ({
+  agent: ref(agent, null),
+  tracks: [{ id: track, level }],
+  flourish: { short_level: short, long_level: long },
+});
+const clove = real("1dbf2edd-4729-0984-3115-daa5eed44993", "a88607ea", 16, 5, 16);
+const jett = real(JETT, "9f32aa28", 3, null, 3);
+const sova = real("320b2a48-4d9b-a075-30f1-1f93a9b638fa", "2843f354", 2, 1, 2);
+const unplayed = real(ISO, "c2df8a06", null, null, null);
+
+describe("levelsOf: the Act Level and the Lifetime Level, as a real account reports them", () => {
+  const levels = (raw: unknown) => levelsOf(normalizeAgentMastery({ data: { account, agents: [raw] } }).agents[0]);
+
+  it("reads short as the Act Level and long as the Lifetime Level", () => {
+    expect(levels(clove)).toEqual({ act: 5, lifetime: 16 });
+    expect(levels(sova)).toEqual({ act: 1, lifetime: 2 });
+  });
+
+  it("treats an omitted level as 0: not played this Act, or not at all", () => {
+    expect(levels(jett)).toEqual({ act: 0, lifetime: 3 });
+    expect(levels(unplayed)).toEqual({ act: 0, lifetime: 0 });
+  });
+
+  it("falls back to the track's level when the long level is missing, and never puts the lifetime under the Act Level", () => {
+    expect(levels({ agent: ref(JETT), tracks: [{ id: "t", level: 9 }], flourish: { short_level: 4 } })).toEqual({ act: 4, lifetime: 9 });
+    expect(levels({ agent: ref(JETT), tracks: [], flourish: { short_level: 6, long_level: 2 } })).toEqual({ act: 6, lifetime: 6 });
+  });
+
+  it("has one track per agent in a real account, equal to the long level (the pattern the reading rests on)", () => {
+    for (const raw of [clove, jett, sova]) {
+      const agent = normalizeAgentMastery({ data: { account, agents: [raw] } }).agents[0];
+      expect(agent.tracks).toHaveLength(1);
+      expect(agent.tracks[0].level).toBe(agent.flourish.long);
+      expect(agent.flourish.short ?? 0).toBeLessThanOrEqual(agent.flourish.long ?? 0);
+    }
   });
 });
