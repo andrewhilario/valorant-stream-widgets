@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { pageList } from "@/config/pages";
-import { feedback, pro, riotDisclaimer, site } from "@/config/site";
+import { feedback, frills, pro, riotDisclaimer, site } from "@/config/site";
 import { SupportLink } from "../sections/SupportLink";
 import { FeedbackLink } from "./FeedbackLink";
 import { ProLink } from "./ProLink";
@@ -43,6 +43,14 @@ export function Footer() {
             <FeedbackLink />
           </>
         )}
+        <Sep />
+        <span>
+          Also by us:{" "}
+          <a className="textlink" href={frills.url}>
+            {frills.name}
+          </a>
+          , {frills.blurb}
+        </span>
         <Sep />
         <span>© {new Date().getFullYear()}</span>
       </p>

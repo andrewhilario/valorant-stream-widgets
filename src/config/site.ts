@@ -41,6 +41,13 @@ export const feedback = {
   url: secureUrl(process.env.NEXT_PUBLIC_FEEDBACK_URL),
 } as const;
 
+/** The sister site by the same maker: a plain, followed link from the footer of every page, so people (and search engines) find it from here. */
+export const frills = {
+  name: "Frills",
+  url: "https://frills.valwidgets.live/",
+  blurb: "free chat overlays for TikTok LIVE and Twitch",
+} as const;
+
 /** Buy Me a Coffee. The page link, plus the floating widget's settings. */
 export const bmc = {
   handle: "ainzzuu",
